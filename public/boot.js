@@ -6,6 +6,8 @@ try {
   const last = JSON.parse(localStorage.getItem("openidea.theme") ?? "null");
   if (last?.theme) document.documentElement.dataset.theme = last.theme;
   if (last?.contrast) document.documentElement.dataset.contrast = last.contrast;
+  if (["solarized-light", "solarized-dark", "one-light", "one-dark"].includes(last?.colorTheme))
+    document.documentElement.dataset.colorTheme = last.colorTheme;
 } catch {
   /* storage unavailable */
 }

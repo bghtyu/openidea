@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderMarkdown } from "./render";
-import { hasMermaid, renderMermaidIn, resetMermaidForTests } from "./mermaid";
+import { hasMermaid, renderMermaidIn, resetMermaidForTests, subscribeTheme, themeKey } from "./mermaid";
 
 const m = vi.hoisted(() => ({
   loads: 0,
@@ -106,6 +106,48 @@ describe("mermaid in the markdown preview", () => {
     expect(m.render).toHaveBeenCalledTimes(2);
     ids.add(m.render.mock.calls[1]![0]);
     expect(ids.size).toBe(2);
+  });
+
+  it("invalidates diagrams when palettes change within the same light/dark kind", async () => {
+    const root = document.documentElement;
+    const previous = root.dataset.colorTheme;
+    const changed = vi.fn();
+    const off = subscribeTheme(changed);
+    try {
+      root.dataset.colorTheme = "one-dark";
+      const firstKey = themeKey();
+      await renderMermaidIn(preview(SEQ)).done;
+      root.dataset.colorTheme = "solarized-dark";
+      await Promise.resolve();
+      expect(changed).toHaveBeenCalled();
+      expect(themeKey()).not.toBe(firstKey);
+      await renderMermaidIn(preview(SEQ)).done;
+      expect(m.render).toHaveBeenCalledTimes(2);
+    } finally {
+      off();
+      if (previous === undefined) delete root.dataset.colorTheme;
+      else root.dataset.colorTheme = previous;
+    }
+  });
+
+  it("passes resolved One HSL colours to Mermaid as RGB", async () => {
+    const computed = vi
+      .spyOn(globalThis, "getComputedStyle")
+      .mockImplementation((el) =>
+        el === document.documentElement
+          ? ({ getPropertyValue: () => "hsl(220, 13%, 18%)" } as unknown as CSSStyleDeclaration)
+          : ({ color: "rgb(40, 44, 52)" } as CSSStyleDeclaration),
+      );
+    try {
+      await renderMermaidIn(preview(SEQ)).done;
+      expect(m.initialize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          themeVariables: expect.objectContaining({ background: "rgb(40, 44, 52)", textColor: "rgb(40, 44, 52)" }),
+        }),
+      );
+    } finally {
+      computed.mockRestore();
+    }
   });
 
   it("skips superseded renders", async () => {

@@ -29,7 +29,7 @@ function loadMermaid(): Promise<Mermaid> {
 /** Theme identity: anything that changes the colours read below. */
 export function themeKey(): string {
   const root = document.documentElement;
-  return `${root.dataset.theme ?? ""}|${root.dataset.contrast ?? ""}|${root.style.getPropertyValue("--accent")}`;
+  return `${root.dataset.theme ?? ""}|${root.dataset.contrast ?? ""}|${root.dataset.colorTheme ?? ""}|${root.style.getPropertyValue("--accent")}`;
 }
 
 /** Calls `cb` when the theme attributes or the accent on the root change. */
@@ -38,7 +38,7 @@ export function subscribeTheme(cb: () => void): () => void {
   const observer = new MutationObserver(cb);
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-theme", "data-contrast", "style"],
+    attributeFilter: ["data-theme", "data-contrast", "data-color-theme", "style"],
   });
   return () => observer.disconnect();
 }
@@ -48,7 +48,16 @@ function themeVariables(): Record<string, string | boolean> {
   const css = getComputedStyle(document.documentElement);
   const token = (...names: string[]) => {
     for (const n of names) {
-      const v = css.getPropertyValue(n).trim();
+      let v = css.getPropertyValue(n).trim();
+      // Atom One keeps the original HSL palette; Mermaid expects hex/RGB.
+      if (/^hsla?\(/i.test(v)) {
+        const probe = document.createElement("span");
+        probe.hidden = true;
+        probe.style.color = `var(${n})`;
+        document.documentElement.append(probe);
+        v = getComputedStyle(probe).color;
+        probe.remove();
+      }
       if (/^(#[0-9a-f]{3,8}|rgba?\([^)]*\))$/i.test(v)) return v;
     }
     return undefined;

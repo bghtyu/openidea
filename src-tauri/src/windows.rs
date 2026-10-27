@@ -225,6 +225,11 @@ pub fn frame_color(appearance: &AppearanceSettings, os_dark: bool) -> Color {
         "dark-hc" => DARK_HC,
         "dark" => DARK,
         "light" => LIGHT,
+        "solarized-light" => Color(0xee, 0xe8, 0xd5, 0xff),
+        "solarized-dark" => Color(0x07, 0x36, 0x42, 0xff),
+        // Exact sRGB rendering of One's original HSL frame colours in tokens.css.
+        "one-light" => Color(0xea, 0xea, 0xeb, 0xff),
+        "one-dark" => Color(0x21, 0x25, 0x2b, 0xff),
         _ if sync && os_dark => DARK,
         _ => LIGHT,
     }
@@ -463,6 +468,39 @@ mod tests {
         a.sync_with_os = true;
         assert_eq!(frame_color(&a, false), Color(0xe9, 0xea, 0xee, 0xff));
         assert_eq!(frame_color(&a, true), Color(0x26, 0x28, 0x2c, 0xff));
+    }
+
+    #[test]
+    fn additional_palettes_keep_native_startup_and_os_preferences_in_sync() {
+        for (id, color) in [
+            ("solarized-light", Color(0xee, 0xe8, 0xd5, 0xff)),
+            ("solarized-dark", Color(0x07, 0x36, 0x42, 0xff)),
+            ("one-light", Color(0xea, 0xea, 0xeb, 0xff)),
+            ("one-dark", Color(0x21, 0x25, 0x2b, 0xff)),
+        ] {
+            let mut a = AppearanceSettings { theme: id.into(), ..Default::default() };
+            assert_eq!(frame_color(&a, false), color);
+            assert_eq!(frame_color(&a, true), color);
+            a.sync_with_os = true;
+            a.preferred_light_theme = id.into();
+            a.preferred_dark_theme = id.into();
+            assert_eq!(frame_color(&a, false), color);
+            assert_eq!(frame_color(&a, true), color);
+        }
+    }
+
+    #[test]
+    fn settings_startup_accepts_serialized_one_and_solarized_frame_colours() {
+        for (hex, expected) in [
+            ("#eaeaeb", Color(0xea, 0xea, 0xeb, 0xff)),
+            ("#21252b", Color(0x21, 0x25, 0x2b, 0xff)),
+            ("#eee8d5", Color(0xee, 0xe8, 0xd5, 0xff)),
+            ("#073642", Color(0x07, 0x36, 0x42, 0xff)),
+            ("#8040bfcc", Color(0x80, 0x40, 0xbf, 0xcc)),
+        ] {
+            let parsed: Color = serde_json::from_value(serde_json::Value::String(hex.into())).unwrap();
+            assert_eq!(parsed, expected);
+        }
     }
 
     #[test]
