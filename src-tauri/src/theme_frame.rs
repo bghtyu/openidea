@@ -7,8 +7,11 @@ use tauri::utils::config::Color;
 
 const TOKENS_CSS: &str = include_str!("../../src/styles/tokens.css");
 
-/// Top-level rule blocks of tokens.css: selector list and declarations, in source order.
-static BLOCKS: LazyLock<Vec<(Vec<String>, HashMap<String, String>)>> = LazyLock::new(|| blocks(TOKENS_CSS));
+/// A top-level rule: its selector list and custom-property declarations.
+type Block = (Vec<String>, HashMap<String, String>);
+
+/// The rule blocks of tokens.css, in source order.
+static BLOCKS: LazyLock<Vec<Block>> = LazyLock::new(|| blocks(TOKENS_CSS));
 
 /// `--bg-frame` of built-in theme `id` (`light`, `dark`, `dark-hc` or a palette
 /// theme with a `:root[data-color-theme="<id>"]` block); `None` for any other id.
@@ -16,7 +19,7 @@ pub fn builtin_frame(id: &str) -> Option<Color> {
     builtin_frame_in(&BLOCKS, id)
 }
 
-fn builtin_frame_in(blocks: &[(Vec<String>, HashMap<String, String>)], id: &str) -> Option<Color> {
+fn builtin_frame_in(blocks: &[Block], id: &str) -> Option<Color> {
     let palette = format!(":root[data-color-theme=\"{id}\"]");
     let mut selectors = vec![":root".to_owned()];
     match id {
@@ -49,7 +52,7 @@ fn builtin_frame_in(blocks: &[(Vec<String>, HashMap<String, String>)], id: &str)
     None
 }
 
-fn blocks(css: &str) -> Vec<(Vec<String>, HashMap<String, String>)> {
+fn blocks(css: &str) -> Vec<Block> {
     let mut text = String::with_capacity(css.len());
     let mut rest = css;
     while let Some(start) = rest.find("/*") {

@@ -35,8 +35,11 @@ fn write_theme_pair(dir: &Path) {
          [[contributes.themes]]\npath = \"t/day.json\"\n[[contributes.themes]]\npath = \"t/night.json\"\n",
     )
     .unwrap();
-    std::fs::write(dir.join("t/day.json"), r##"{"id":"day","name":"Day","kind":"light","tokens":{"--bg-frame":"#eeeeee"}}"##)
-        .unwrap();
+    std::fs::write(
+        dir.join("t/day.json"),
+        r##"{"id":"day","name":"Day","kind":"light","tokens":{"--bg-frame":"#eeeeee"}}"##,
+    )
+    .unwrap();
     std::fs::write(
         dir.join("t/night.json"),
         r##"{"id":"night","name":"Night","kind":"dark","tokens":{"--bg-frame":"#111111"}}"##,
