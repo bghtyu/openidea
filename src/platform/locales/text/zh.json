@@ -3787,6 +3787,7 @@
   "Enable {name}": "启用 {name}",
   "Run {name}": "运行 {name}",
   "Apply theme {name}": "应用主题 {name}",
+  "Apply icon theme {name}": "应用图标主题 {name}",
   "Confirm uninstall {name}": "确认卸载 {name}",
   "From plugin {name}": "来自插件 {name}",
   "{count} items": "{count} 项",

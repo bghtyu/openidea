@@ -342,7 +342,7 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
                     size="small"
                     variant={selected ? "secondary" : "ghost"}
                     disabled={!selected && (!live || plugin.source !== "installed")}
-                    aria-label={selected ? "Use Default Icons" : `Apply icon theme ${t.name}`}
+                    aria-label={selected ? "Use Default Icons" : tx`Apply icon theme ${t.name}`}
                     onClick={() => void selectPluginIconTheme(selected ? null : plugin.id, selected ? null : t.id)}
                   >
                     <T>{selected ? "Use Default Icons" : "Apply Icons"}</T>
