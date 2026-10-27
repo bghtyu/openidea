@@ -243,15 +243,23 @@ fn update_endpoint_env() -> Option<String> {
 /// tauri.conf.json, or the `OPENIDEA_UPDATE_ENDPOINT` environment variable. Empty by
 /// default, and "Check for Updates…" is hidden then.
 pub fn updates_configured<R: tauri::Runtime>(app: &AppHandle<R>) -> bool {
-    let in_config = app
-        .config()
+    updates_enabled(app.config(), update_endpoint_env().as_deref())
+}
+
+fn updates_enabled(config: &tauri::Config, endpoint_env: Option<&str>) -> bool {
+    // The isolated test package must never install an upstream/stable update,
+    // including when the launching shell has an update endpoint override.
+    if config.identifier == "com.bghtyu.openidea.test" {
+        return false;
+    }
+    let in_config = config
         .plugins
         .0
         .get("updater")
         .and_then(|u| u.get("endpoints"))
         .and_then(|e| e.as_array())
         .is_some_and(|e| !e.is_empty());
-    in_config || update_endpoint_env().is_some()
+    in_config || endpoint_env.is_some_and(|e| !e.trim().is_empty())
 }
 
 fn updater(app: &AppHandle) -> IdeResult<Option<tauri_plugin_updater::Updater>> {
@@ -322,4 +330,27 @@ pub async fn app_install_update(app: AppHandle, windows: State<'_, WindowsState>
     windows.set_restart();
     app_quit(app, windows);
     Ok(())
+}
+
+#[cfg(test)]
+mod test_package_updates {
+    use super::*;
+
+    #[test]
+    fn test_identity_blocks_both_configured_and_environment_updates() {
+        let mut config: tauri::Config = serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
+        assert!(updates_enabled(&config, None));
+        config.plugins.0.insert("updater".into(), serde_json::json!({"endpoints": []}));
+        assert!(!updates_enabled(&config, None));
+        assert!(updates_enabled(&config, Some("https://example.invalid/latest.json")));
+        let overlay: serde_json::Value =
+            serde_json::from_str(include_str!("../../tauri.test-macos.conf.json")).unwrap();
+        config.identifier = overlay["identifier"].as_str().unwrap().into();
+        assert!(!updates_enabled(&config, Some("https://example.invalid/latest.json")));
+        config
+            .plugins
+            .0
+            .insert("updater".into(), serde_json::json!({"endpoints": ["https://example.invalid/latest.json"]}));
+        assert!(!updates_enabled(&config, None));
+    }
 }

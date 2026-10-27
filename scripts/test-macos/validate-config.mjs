@@ -1,0 +1,17 @@
+import console from "node:console";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const base = JSON.parse(readFileSync("src-tauri/tauri.conf.json", "utf8"));
+const test = JSON.parse(readFileSync("src-tauri/tauri.test-macos.conf.json", "utf8"));
+assert.equal(test.productName, "OpenIDEA Test");
+assert.equal(test.identifier, "com.bghtyu.openidea.test");
+assert.notEqual(test.identifier, base.identifier);
+assert.equal(test.bundle.createUpdaterArtifacts, false);
+assert.deepEqual(test.bundle.targets, ["app"]);
+assert.equal(test.bundle.macOS.signingIdentity, "-");
+assert.deepEqual(test.plugins.updater.endpoints, []);
+assert.equal(test.plugins.updater.pubkey, "");
+assert.equal(base.identifier, "ai.l0ng.openidea");
+assert.equal(base.bundle.createUpdaterArtifacts, true);
+assert.ok(base.plugins.updater.endpoints.length > 0);
+console.log(`Isolated test config verified; version ${base.version}`);

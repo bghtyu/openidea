@@ -1,0 +1,65 @@
+name: Apple Silicon test DMG
+on:
+  push:
+    branches: [test/apple-silicon-dmg]
+    paths:
+      - ".github/workflows/test-apple-silicon.yml"
+      - "src-tauri/**"
+      - "src/**"
+      - "crates/**"
+      - "scripts/test-macos/**"
+      - "Cargo.*"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "public/**"
+      - "index.html"
+      - "vite.config.ts"
+permissions:
+  contents: read
+concurrency:
+  group: test-apple-silicon-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dmg:
+    if: github.repository == 'bghtyu/openidea'
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_RELEASE_LTO: "false"
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 16
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: 2
+      CARGO_PROFILE_RELEASE_DEBUG: 0
+      APPLE_SIGNING_IDENTITY: "-"
+      OPENIDEA_UPDATE_ENDPOINT: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@1.96.0
+        with: { targets: aarch64-apple-darwin }
+      - uses: Swatinem/rust-cache@v2
+        with: { key: apple-silicon-test-no-lto }
+      - name: Verify source and isolated configuration
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(uname -m)" = arm64
+          node scripts/test-macos/validate-config.mjs
+      - run: pnpm install --frozen-lockfile
+      - name: Build test app (ad-hoc signature only)
+        run: pnpm tauri build --ci --target aarch64-apple-darwin --bundles app --config src-tauri/tauri.test-macos.conf.json
+      - name: Verify app, create and mount DMG, record checksums
+        run: bash scripts/test-macos/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openidea-test-apple-silicon-${{ github.sha }}
+          path: test-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

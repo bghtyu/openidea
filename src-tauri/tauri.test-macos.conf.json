@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OpenIDEA Test",
+  "identifier": "com.bghtyu.openidea.test",
+  "bundle": {
+    "targets": ["app"],
+    "createUpdaterArtifacts": false,
+    "macOS": { "signingIdentity": "-" }
+  },
+  "plugins": { "updater": { "endpoints": [], "pubkey": "" } }
+}
