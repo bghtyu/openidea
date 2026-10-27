@@ -287,7 +287,12 @@ export const commands = {
 	 *  language server returned a non-`file:` URI for. Cached per project.
 	 */
 	lspVirtualDocument: (uri: string) => typedError<VirtualDocument, IdeError>(__TAURI_INVOKE("lsp_virtual_document", { uri })),
-	lspReferences: (doc: DocId, pos: Pos, includeDeclaration: boolean) => typedError<Location[], IdeError>(__TAURI_INVOKE("lsp_references", { doc, pos, includeDeclaration })),
+	/**
+	 *  References of the symbol at `pos`. `project_wide` also searches project files
+	 *  outside the language server's analysis scope; bulk scans over many symbols
+	 *  leave it off. Cancel with `cancel_request(request)`.
+	 */
+	lspReferences: (request: RequestId, doc: DocId, pos: Pos, includeDeclaration: boolean, projectWide: boolean) => typedError<References, IdeError>(__TAURI_INVOKE("lsp_references", { request, doc, pos, includeDeclaration, projectWide })),
 	lspDocumentHighlights: (doc: DocId, pos: Pos) => typedError<Highlight[], IdeError>(__TAURI_INVOKE("lsp_document_highlights", { doc, pos })),
 	lspWorkspaceSymbols: (request: RequestId, query: string) => typedError<WorkspaceSymbol[], IdeError>(__TAURI_INVOKE("lsp_workspace_symbols", { request, query })),
 	lspCodeActions: (doc: DocId, range: Range, only: string[]) => typedError<CodeAction[], IdeError>(__TAURI_INVOKE("lsp_code_actions", { doc, range, only })),
@@ -685,6 +690,11 @@ export const commands = {
 	pluginId: string,
 	theme: ThemeDef,
 } | null, IdeError>(__TAURI_INVOKE("plugin_set_theme", { pluginId, themeId })),
+	/**
+	 *  The UI reports the selected plugin theme's resolved frame colour (`#rrggbb[aa]`),
+	 *  which new windows open in before their page loads.
+	 */
+	pluginSetThemeFrame: (color: string | null) => typedError<null, IdeError>(__TAURI_INVOKE("plugin_set_theme_frame", { color })),
 	/**
 	 *  Snapshot of process memory and subsystem sizes, summed over all projects.
 	 *  Async: the process walk runs on the blocking pool, not the main thread.
@@ -4175,6 +4185,18 @@ export type RecentProject = {
 	branch: string | null,
 };
 
+export type References = {
+	locations: Location[],
+	incomplete: ReferencesIncomplete | null,
+};
+
+/**  Why a references search may have missed usages. */
+export type ReferencesIncomplete = 
+/**  A language server was still indexing. */
+"indexing" | 
+/**  More project files mention the name than were checked. */
+"tooManyFiles";
+
 export type Remote = {
 	name: string,
 	/**  Fetch URL. */
@@ -5150,6 +5172,10 @@ export type VcsRoot = {
 	root: IpcPath,
 	/**  Merge / rebase / cherry-pick / revert in progress. */
 	operation: string | null,
+	/**  Current branch; `None` when HEAD is detached (or unreadable). */
+	head: string | null,
+	/**  HEAD commit; `None` before the first commit. */
+	headCommit: string | null,
 };
 
 /**  Version Control (main page) and its sub-pages. */

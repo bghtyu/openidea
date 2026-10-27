@@ -108,7 +108,7 @@ describe("mermaid in the markdown preview", () => {
     expect(ids.size).toBe(2);
   });
 
-  it("invalidates diagrams when palettes change within the same light/dark kind", async () => {
+  it("re-renders when switching between built-in palette themes of the same light / dark base", async () => {
     const root = document.documentElement;
     const previous = root.dataset.colorTheme;
     const changed = vi.fn();
@@ -130,21 +130,61 @@ describe("mermaid in the markdown preview", () => {
     }
   });
 
-  it("passes resolved One HSL colours to Mermaid as RGB", async () => {
+  it("re-renders when switching between plugin themes of the same light / dark base", async () => {
+    const root = document.documentElement;
+    const changed = vi.fn();
+    const off = subscribeTheme(changed);
+    try {
+      root.dataset.theme = "dark";
+      root.dataset.pluginTheme = "acme-themes/night";
+      const firstKey = themeKey();
+      await renderMermaidIn(preview(SEQ)).done;
+      root.dataset.pluginTheme = "acme-themes/dusk";
+      await Promise.resolve();
+      expect(changed).toHaveBeenCalled();
+      expect(themeKey()).not.toBe(firstKey);
+      await renderMermaidIn(preview(SEQ)).done;
+      expect(m.render).toHaveBeenCalledTimes(2);
+    } finally {
+      off();
+      delete root.dataset.pluginTheme;
+    }
+  });
+
+  it("passes colours a theme writes as hsl() or color-mix() to mermaid as RGB", async () => {
+    const values: Record<string, string> = {
+      "--bg-editor": "hsl(220, 13%, 18%)",
+      "--fg": "color-mix(in srgb, hsl(220, 14%, 71%) 90%, black)",
+      "--danger": "#e06c75",
+    };
+    const resolved: Record<string, string> = {
+      "--bg-editor": "rgb(40, 44, 52)",
+      "--fg": "color(srgb 0.6 0.62 0.66)",
+    };
+    let probe = "";
     const computed = vi
       .spyOn(globalThis, "getComputedStyle")
-      .mockImplementation((el) =>
-        el === document.documentElement
-          ? ({ getPropertyValue: () => "hsl(220, 13%, 18%)" } as unknown as CSSStyleDeclaration)
-          : ({ color: "rgb(40, 44, 52)" } as CSSStyleDeclaration),
+      .mockImplementation(
+        (el) =>
+          (el === document.documentElement
+            ? { getPropertyValue: (n: string) => values[n] ?? "" }
+            : {
+                color: resolved[(probe = (el as HTMLElement).style.color.slice(4, -1))] ?? "",
+              }) as unknown as CSSStyleDeclaration,
       );
     try {
       await renderMermaidIn(preview(SEQ)).done;
+      expect(probe).not.toBe("");
       expect(m.initialize).toHaveBeenCalledWith(
         expect.objectContaining({
-          themeVariables: expect.objectContaining({ background: "rgb(40, 44, 52)", textColor: "rgb(40, 44, 52)" }),
+          themeVariables: expect.objectContaining({
+            background: "rgb(40, 44, 52)",
+            textColor: "rgb(153, 158, 168)",
+            errorTextColor: "#e06c75",
+          }),
         }),
       );
+      expect(document.querySelector("span[hidden]")).toBeNull();
     } finally {
       computed.mockRestore();
     }
