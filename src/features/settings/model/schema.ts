@@ -33,9 +33,8 @@ import {
   type GeneralExtras,
   type NotificationsValid,
 } from "./behaviorSchema";
-import { BUILTIN_THEME_IDS, type BuiltinThemeId } from "@/platform/themes";
 
-export type ThemeId = BuiltinThemeId | "system";
+export type ThemeId = "dark" | "light" | "system" | "dark-hc";
 export type LocaleId = "en" | "zh";
 
 /** A user keymap (Keymap › Duplicate…): its own overrides on top of a bundled preset. */
@@ -156,7 +155,7 @@ export const LIMITS = {
   localHistoryMaxMb: { min: 16, max: 16384 },
 } as const;
 
-const THEMES: readonly ThemeId[] = [...BUILTIN_THEME_IDS, "system"];
+const THEMES: readonly ThemeId[] = ["dark", "light", "system", "dark-hc"];
 const LOCALES: readonly LocaleId[] = ["en", "zh"];
 export const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 

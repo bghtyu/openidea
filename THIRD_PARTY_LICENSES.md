@@ -100,6 +100,17 @@ c → cpp, php_only), node names adapted to the bundled grammar versions
 definitions re-kinded as `field` / `method`, and missing scopes, definitions and
 references added; each file's header notes its changes.
 
+## Theme plugin palettes
+
+The sample theme plugins port MIT-licensed palettes; each package's `LICENSE`
+holds the full notice and source revisions:
+
+- `plugins/theme-solarized/`: [Solarized](https://github.com/altercation/solarized),
+  Copyright (c) 2011 Ethan Schoonover.
+- `plugins/theme-one/`: Atom [One Light](https://github.com/atom/one-light-syntax) /
+  [One Dark](https://github.com/atom/one-dark-syntax) syntax themes, Copyright (c) 2016
+  GitHub Inc., and their UI themes, Copyright (c) 2014 GitHub Inc.
+
 ---
 
 Apache License
@@ -158,85 +169,12 @@ If the Work includes a "NOTICE" text file as part of its distribution, then any 
 
 END OF TERMS AND CONDITIONS
 
-## Solarized
+## Optional Atom Material Style icon package
 
-The Solarized palettes in `src/styles/tokens.css` are adapted from
-[Ethan Schoonover’s Solarized](https://github.com/altercation/solarized/tree/62f656a02f93c5190a8753159e34b385588d5ff3).
-See [theme sources and mapping](docs/themes.md). MIT license:
-
-```text
-Copyright (c) 2011 Ethan Schoonover
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-```
-
-## Atom One Light and One Dark
-
-The One palettes and semantic syntax mapping in `src/styles/tokens.css` are
-adapted from GitHub’s Atom One syntax and UI themes.
-Source revisions are listed in [theme sources and mapping](docs/themes.md).
-Both syntax themes use the following MIT notice:
-
-```text
-Copyright (c) 2016 GitHub Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-Both UI themes use the following MIT notice:
-
-```text
-Copyright (c) 2014 GitHub Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
+`plugins/icon-theme-atom-material` contains original MIT artwork by Walter Wang,
+with a curated reference to Elior "Mallowigi" Boukhobza's MIT association XML from
+[AtomMaterialUI/iconGenerator](https://github.com/AtomMaterialUI/iconGenerator/tree/3efb7279176465d18e048d6eed8b916e9c7acd89).
+Its [LICENSE](plugins/icon-theme-atom-material/LICENSE),
+[NOTICE](plugins/icon-theme-atom-material/NOTICE), and
+[per-resource provenance](plugins/icon-theme-atom-material/provenance.json) accompany
+installation. No SVG from the upstream mixed-source icon collection is shipped.

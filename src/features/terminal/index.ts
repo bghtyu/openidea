@@ -23,12 +23,7 @@ function focusActiveSoon() {
 }
 
 function shellName(path: string): string {
-  return (
-    path
-      .split(/[\\/]/)
-      .pop()!
-      .replace(/\.exe$/i, "") || path
-  );
+  return path.split(/[\\/]/).pop()!.replace(/\.exe$/i, "") || path;
 }
 
 async function openNewTab(dir?: string) {
@@ -200,9 +195,10 @@ export function activate(): () => void {
       terminalRuntime()?.applyThemeToAll();
       terminalRuntime()?.applyThemeToEmbedded();
     });
+    // A plugin theme switch keeps data-theme when both themes share a light / dark base.
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme", "data-contrast", "data-color-theme", "style"],
+      attributeFilter: ["data-theme", "data-contrast", "data-plugin-theme", "style"],
     });
     disposers.push(() => observer.disconnect());
   }

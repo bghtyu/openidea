@@ -1,0 +1,17 @@
+Atom Material Style Icons for OpenIDEA
+
+This is an independent adaptation, not the Atom Material JetBrains plugin.
+All bundled SVG geometry is original artwork by Walter Wang (2026), MIT licensed.
+No upstream SVG, logo, font, paid asset, PSI icon, or UI icon is redistributed.
+
+The curated association reference comes from Elior "Mallowigi" Boukhobza's
+MIT-licensed AtomMaterialUI/iconGenerator XML (2015-2025). Its exact revisions
+and original association attributes are recorded in provenance.json and
+scripts/icons/upstream-associations.json. The original copyright and permission
+notice is preserved in LICENSE.
+
+The upstream repositories credit File-Icons, MFixx, Devicons, Octicons, Material
+Design Icons, FontAwesome, and The Noun Project. Their individual artwork
+licenses have NOT been established by this package. All upstream artwork is
+therefore excluded, rather than covered by a blanket MIT claim. Original
+letter and folder glyphs replace those resources. See docs/plugins/icon-themes.md.

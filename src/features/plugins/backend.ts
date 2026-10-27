@@ -4,7 +4,7 @@
  * development and tests.
  */
 import { Channel } from "@tauri-apps/api/core";
-import type { ActiveTheme, CatalogPlugin, PluginEvent, PluginInfo, PluginsSnapshot } from "@/bindings";
+import type { ActiveIconTheme, ActiveTheme, CatalogPlugin, PluginEvent, PluginInfo, PluginsSnapshot } from "@/bindings";
 import { call, commands, IpcError, isTauri } from "@/platform/ipc";
 
 export interface PluginsBackend {
@@ -18,6 +18,9 @@ export interface PluginsBackend {
   runCommand(pluginId: string, commandId: string, arg: string | null): Promise<string | null>;
   setActiveFile(path: string | null): Promise<void>;
   setTheme(pluginId: string | null, themeId: string | null): Promise<ActiveTheme | null>;
+  /** The selected theme's resolved frame colour (`#rrggbb[aa]`), which new windows open in. */
+  setThemeFrame(color: string | null): Promise<void>;
+  setIconTheme(pluginId: string | null, themeId: string | null): Promise<ActiveIconTheme | null>;
   /** Folder picker; `null` when cancelled. */
   pickFolder(): Promise<string | null>;
   /** Subscribes to backend plugin events (this window only). */
@@ -40,6 +43,10 @@ export const tauriPluginsBackend: PluginsBackend = {
     await commands.pluginSetActiveFile(path);
   },
   setTheme: (pluginId, themeId) => call(commands.pluginSetTheme(pluginId, themeId)),
+  setThemeFrame: async (color) => {
+    await call(commands.pluginSetThemeFrame(color));
+  },
+  setIconTheme: (pluginId, themeId) => call(commands.pluginSetIconTheme(pluginId, themeId)),
   pickFolder: async () => {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const picked = await open({ directory: true, multiple: false, title: "Install Plugin from Disk" });
@@ -71,21 +78,38 @@ function ensureSubscribed() {
 // ---------------------------------------------------------------------------
 // Browser simulation: the bundled sample plugins, with `hello` implemented in JS.
 
-const SOLARIZED: ActiveTheme["theme"] = {
-  id: "solarized-dark",
-  name: "Solarized Dark",
-  kind: "dark",
-  tokens: {
-    "--bg-app": "#002b36",
-    "--bg-elev": "#03313c",
-    "--bg-popup": "#073642",
-    "--fg": "#93a1a1",
-    "--fg-strong": "#eee8d5",
-    "--accent": "#268bd2",
-    "--syn-keyword": "#859900",
-    "--syn-string": "#2aa198",
+const SOLARIZED: ActiveTheme["theme"][] = [
+  {
+    id: "solarized-light",
+    name: "Solarized Light",
+    kind: "light",
+    tokens: {
+      "--bg-app": "#fdf6e3",
+      "--bg-island": "#fdf6e3",
+      "--bg-frame": "#eee8d5",
+      "--bg-elev": "#eee8d5",
+      "--fg": "#657b83",
+      "--accent": "#268bd2",
+      "--syn-keyword": "#859900",
+      "--syn-string": "#2aa198",
+    },
   },
-};
+  {
+    id: "solarized-dark",
+    name: "Solarized Dark",
+    kind: "dark",
+    tokens: {
+      "--bg-app": "#002b36",
+      "--bg-island": "#002b36",
+      "--bg-frame": "#073642",
+      "--bg-elev": "#073642",
+      "--fg": "#839496",
+      "--accent": "#268bd2",
+      "--syn-keyword": "#859900",
+      "--syn-string": "#2aa198",
+    },
+  },
+];
 
 function samplePlugins(): PluginInfo[] {
   const base = {
@@ -97,6 +121,7 @@ function samplePlugins(): PluginInfo[] {
     error: null,
     languages: [],
     themes: [],
+    iconThemes: [],
     commands: [],
     permissions: [],
   };
@@ -118,14 +143,14 @@ function samplePlugins(): PluginInfo[] {
     },
     {
       ...base,
-      id: "theme-solarized-dark",
-      name: "Solarized Dark Theme",
+      id: "theme-solarized",
+      name: "Solarized Themes",
       version: "1.0.0",
-      description: "Ethan Schoonover's Solarized palette, dark variant.",
-      path: "~/Library/Application Support/ai.l0ng.openidea/plugins/theme-solarized-dark",
+      description: "Solarized Light and Solarized Dark: Ethan Schoonover's Solarized palette.",
+      path: "~/Library/Application Support/ai.l0ng.openidea/plugins/theme-solarized",
       status: "static",
       hasCode: false,
-      themes: [{ id: "solarized-dark", name: "Solarized Dark", kind: "dark" }],
+      themes: SOLARIZED.map(({ id, name, kind }) => ({ id, name, kind })),
     },
     {
       ...base,
@@ -143,7 +168,7 @@ function samplePlugins(): PluginInfo[] {
 
 /** The sample packages as a local catalog (the desktop app scans `plugins/`). */
 export function sampleCatalog(): CatalogPlugin[] {
-  return samplePlugins().map((p) => ({
+  return [...samplePlugins(), sampleIconPlugin()].map((p) => ({
     id: p.id,
     name: p.name,
     version: p.version,
@@ -157,6 +182,7 @@ export function sampleCatalog(): CatalogPlugin[] {
     commands: p.commands,
     languageCount: p.languages.length,
     themeCount: p.themes.length,
+    iconThemeCount: p.iconThemes.length,
     problem: null,
   }));
 }
@@ -166,9 +192,13 @@ export function createMemoryPluginsBackend(
   catalog: CatalogPlugin[] = sampleCatalog(),
 ): PluginsBackend {
   let plugins = initial.map((p) => ({ ...p }));
-  const templates = samplePlugins();
+  const templates = [...samplePlugins(), sampleIconPlugin()];
   let theme: { pluginId: string; themeId: string } | null = null;
   let activeFile: string | null = null;
+  let iconTheme: ActiveIconTheme | null = null;
+  let iconSelectionGeneration = 0;
+  const activeIcons = () =>
+    plugins.some((p) => p.id === iconTheme?.pluginId && p.enabled && p.status === "static") ? iconTheme : null;
   const listeners = new Set<(e: PluginEvent) => void>();
   const emit = (e: PluginEvent) => listeners.forEach((l) => l(e));
   const find = (id: string) => {
@@ -179,11 +209,16 @@ export function createMemoryPluginsBackend(
   const activeTheme = (): ActiveTheme | null => {
     if (!theme) return null;
     const p = plugins.find((x) => x.id === theme?.pluginId);
-    if (!p?.enabled || theme.themeId !== SOLARIZED.id) return null;
-    return { pluginId: p.id, theme: SOLARIZED };
+    const t = SOLARIZED.find((x) => x.id === theme?.themeId);
+    if (!p?.enabled || !t) return null;
+    return { pluginId: p.id, theme: t };
   };
   return {
-    list: async () => ({ plugins: plugins.map((p) => ({ ...p })), activeTheme: activeTheme() }),
+    list: async () => ({
+      plugins: plugins.map((p) => ({ ...p })),
+      activeTheme: activeTheme(),
+      activeIconTheme: activeIcons(),
+    }),
     setEnabled: async (id, enabled) => {
       const p = find(id);
       p.enabled = enabled;
@@ -208,6 +243,9 @@ export function createMemoryPluginsBackend(
     uninstall: async (id) => {
       find(id);
       plugins = plugins.filter((p) => p.id !== id);
+      iconSelectionGeneration++;
+      if (iconTheme?.pluginId === id) iconTheme = null;
+      emit({ type: "iconThemeChanged", theme: activeIcons() });
       emit({ type: "commandsChanged" });
     },
     reload: async (id) => find(id),
@@ -237,6 +275,21 @@ export function createMemoryPluginsBackend(
       emit({ type: "themeChanged", theme: t });
       return t;
     },
+    setThemeFrame: async () => {},
+    setIconTheme: async (pluginId, themeId) => {
+      const gen = ++iconSelectionGeneration;
+      let next: ActiveIconTheme | null;
+      if (!pluginId && !themeId) next = null;
+      else {
+        const p = find(pluginId!);
+        if (!p.enabled || !p.iconThemes.some((t) => t.id === themeId)) throw new Error("Select an enabled icon theme");
+        next = await loadSampleIconTheme(p.id, themeId!);
+      }
+      if (gen !== iconSelectionGeneration) return activeIcons();
+      iconTheme = next;
+      emit({ type: "iconThemeChanged", theme: activeIcons() });
+      return activeIcons();
+    },
     pickFolder: async () => null,
     onEvent: (handler) => {
       listeners.add(handler);
@@ -254,4 +307,50 @@ export function pluginsBackend(): PluginsBackend {
 /** Test hook. */
 export function setPluginsBackend(b: PluginsBackend | null) {
   current = b;
+}
+
+function sampleIconPlugin(): PluginInfo {
+  return {
+    id: "icon-theme-atom-material",
+    name: "Atom Material Style Icons",
+    version: "1.0.0",
+    description:
+      "Material style file and folder icons with light/dark variants. Original replacement artwork; curated Atom Material associations.",
+    authors: ["Walter Wang"],
+    homepage: null,
+    changeNotes: null,
+    source: "installed",
+    path: "plugins/icon-theme-atom-material",
+    enabled: true,
+    status: "static",
+    error: null,
+    hasCode: false,
+    permissions: [],
+    commands: [],
+    languages: [],
+    themes: [],
+    iconThemes: [{ id: "atom-material", name: "Atom Material Style" }],
+  };
+}
+
+/** Browser demo only: native installation and validation run in Rust, never through this fixture. */
+async function loadSampleIconTheme(pluginId: string, themeId: string): Promise<ActiveIconTheme> {
+  const { default: def } = await import("../../../plugins/icon-theme-atom-material/icons.json");
+  if (pluginId !== "icon-theme-atom-material" || themeId !== def.id)
+    throw new Error("Desktop app required for this package");
+  const sources = import.meta.glob<string>("../../../plugins/icon-theme-atom-material/icons/*.svg", {
+    query: "?raw",
+    import: "default",
+  });
+  const entries = await Promise.all(
+    Object.entries(def.icons).map(async ([id, paths]) => {
+      const [light, dark] = await Promise.all([
+        sources[`../../../plugins/icon-theme-atom-material/${paths.light}`]!(),
+        sources[`../../../plugins/icon-theme-atom-material/${paths.dark}`]!(),
+      ]);
+      return [id, { light, dark }] as const;
+    }),
+  );
+  const icons = Object.fromEntries(entries);
+  return { pluginId, theme: { id: def.id, name: def.name, icons, rules: def.rules } };
 }

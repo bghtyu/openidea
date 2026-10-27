@@ -55,6 +55,13 @@ pub struct PluginTheme {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub struct PluginIconTheme {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginInfo {
     pub id: String,
     pub name: String,
@@ -75,6 +82,7 @@ pub struct PluginInfo {
     pub commands: Vec<CommandDecl>,
     pub languages: Vec<PluginLanguage>,
     pub themes: Vec<PluginTheme>,
+    pub icon_themes: Vec<PluginIconTheme>,
 }
 
 /// A plugin package available for installation from a local catalog
@@ -96,6 +104,7 @@ pub struct CatalogPlugin {
     pub commands: Vec<CommandDecl>,
     pub language_count: u32,
     pub theme_count: u32,
+    pub icon_theme_count: u32,
     /// Why the package cannot be installed as is (e.g. its WASM is not built).
     pub problem: Option<String>,
 }
@@ -107,11 +116,19 @@ pub struct ActiveTheme {
     pub theme: ThemeDef,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveIconTheme {
+    pub plugin_id: String,
+    pub theme: crate::IconThemeDef,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginsSnapshot {
     pub plugins: Vec<PluginInfo>,
     pub active_theme: Option<ActiveTheme>,
+    pub active_icon_theme: Option<ActiveIconTheme>,
 }
 
 /// Backend → UI notifications (Tauri event `ide://plugin`).
@@ -128,6 +145,8 @@ pub enum PluginEvent {
     ReplaceSelection { plugin_id: String, text: String },
     #[serde(rename_all = "camelCase")]
     ThemeChanged { theme: Option<ActiveTheme> },
+    #[serde(rename_all = "camelCase")]
+    IconThemeChanged { theme: Option<ActiveIconTheme> },
 }
 
 /// Delivers events to the UI. `client` is the window that invoked the plugin
