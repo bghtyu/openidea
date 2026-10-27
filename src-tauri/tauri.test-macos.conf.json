@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OpenIDEA Test",
+  "identifier": "com.bghtyu.openidea.test",
+  "bundle": {
+    "targets": ["app"],
+    "createUpdaterArtifacts": false,
+    "resources": {
+      "../plugins/theme-solarized/": "plugins/theme-solarized/",
+      "../plugins/theme-one/": "plugins/theme-one/",
+      "../plugins/icon-theme-atom-material/": "plugins/icon-theme-atom-material/"
+    },
+    "macOS": { "signingIdentity": "-" }
+  },
+  "plugins": { "updater": { "endpoints": [], "pubkey": "" } }
+}
