@@ -14,12 +14,14 @@
 //! Sources: `<plugins_dir>/<id>/` (installed) and `<project>/.openidea/plugins/*/`
 //! (dev plugins, loaded by [`PluginHost::sync_project`]).
 
+mod icon_theme;
 mod manifest;
 mod runtime;
 mod sandbox;
 mod theme;
 mod types;
 
+pub use icon_theme::{FolderIcons, IconPathRule, IconRules, IconSvg, IconThemeDef};
 pub use manifest::{
     API_VERSION, CommandDecl, Contributions, FileDecl, MANIFEST_FILE, Permission, PluginManifest, ThemeDecl,
 };
@@ -29,14 +31,18 @@ pub use types::*;
 
 use ide_core::{IdeError, IdeResult};
 use ide_language::LanguageConfig;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::{Condvar, Mutex, RwLock};
 use runtime::{CallEffects, CallError, PluginEngine, Registrations, Runtime, RuntimeSetup};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 
 const STATE_FILE: &str = "state.json";
+/// Top-level files copied with a package on install besides those the manifest references.
+const LICENSE_FILES: &[&str] =
+    &["LICENSE", "LICENSE.md", "LICENSE.txt", "NOTICE", "NOTICE.md", "NOTICE.txt", "COPYING"];
 /// Dev plugins live here, relative to a project root.
 pub const DEV_PLUGINS_DIR: &str = ".openidea/plugins";
 
@@ -46,12 +52,18 @@ struct PersistedState {
     disabled: BTreeSet<String>,
     #[serde(default)]
     theme: Option<ThemeRef>,
+    #[serde(default)]
+    icon_theme: Option<ThemeRef>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 struct ThemeRef {
     plugin: String,
     theme: String,
+    /// The theme's window frame colour as the UI resolved it (`#rrggbb[aa]`), so
+    /// new windows open in it before the plugin is loaded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    frame: Option<String>,
 }
 
 struct Meta {
@@ -67,6 +79,7 @@ struct LoadedPlugin {
     dev_root: Option<PathBuf>,
     /// Manifest contributions, restored on every (re)start.
     static_regs: Registrations,
+    load_error: Option<String>,
     registrations: Arc<Mutex<Registrations>>,
     meta: Mutex<Meta>,
     runtime: Mutex<Option<Runtime>>,
@@ -95,6 +108,8 @@ pub struct PluginHost {
     active_files: Arc<Mutex<HashMap<String, String>>>,
     /// Serializes loading / unloading so concurrent windows can't race.
     lifecycle: Mutex<()>,
+    /// Set once the first [`load_all`](Self::load_all) has finished.
+    initial_load: (Mutex<bool>, Condvar),
 }
 
 impl PluginHost {
@@ -114,6 +129,7 @@ impl PluginHost {
             state: Mutex::new(state),
             active_files: Arc::default(),
             lifecycle: Mutex::new(()),
+            initial_load: (Mutex::new(false), Condvar::new()),
         })
     }
 
@@ -129,7 +145,22 @@ impl PluginHost {
                 self.load_dir(&dir, PluginSource::Installed, None);
             }
         }
+        let (done, cv) = &self.initial_load;
+        *done.lock() = true;
+        cv.notify_all();
         self.emit(None, PluginEvent::CommandsChanged);
+    }
+
+    /// Waits (at most `timeout`) for the first [`load_all`](Self::load_all), so a
+    /// listing made at startup already holds the installed plugins and the
+    /// selected theme. Returns whether loading has finished.
+    pub fn wait_initial_load(&self, timeout: Duration) -> bool {
+        let (done, cv) = &self.initial_load;
+        let mut done = done.lock();
+        if !*done {
+            cv.wait_while_for(&mut done, |d| !*d, timeout);
+        }
+        *done
     }
 
     /// Loads new dev plugins from `<root>/.openidea/plugins/` and unloads vanished ones.
@@ -168,7 +199,7 @@ impl PluginHost {
             .map(|p| self.info(p))
             .collect();
         plugins.sort_by_key(|p| p.name.to_lowercase());
-        PluginsSnapshot { plugins, active_theme: self.active_theme() }
+        PluginsSnapshot { plugins, active_theme: self.active_theme(), active_icon_theme: self.active_icon_theme() }
     }
 
     pub fn info_of(&self, id: &str) -> IdeResult<PluginInfo> {
@@ -215,7 +246,10 @@ impl PluginHost {
     pub fn install_from_dir(&self, src: &Path) -> IdeResult<PluginInfo> {
         let _guard = self.lifecycle.lock();
         let manifest = PluginManifest::load(src).map_err(IdeError::invalid)?;
-        for file in manifest.files() {
+        let (_, icon_files) = icon_theme::load_icon_themes(src, &manifest).map_err(IdeError::invalid)?;
+        let files: BTreeSet<PathBuf> =
+            manifest.files().into_iter().map(Path::to_path_buf).chain(icon_files.keys().cloned()).collect();
+        for file in &files {
             if !src.join(file).is_file() {
                 return Err(IdeError::invalid(format!(
                     "{} is missing (referenced by plugin.toml); build the plugin first",
@@ -244,13 +278,23 @@ impl PluginHost {
             let copy = || -> std::io::Result<()> {
                 std::fs::create_dir_all(&staging)?;
                 std::fs::copy(src.join(MANIFEST_FILE), staging.join(MANIFEST_FILE))?;
-                for file in manifest.files() {
+                for file in &files {
                     let to = staging.join(file);
                     if let Some(parent) = to.parent() {
                         std::fs::create_dir_all(parent)?;
                     }
-                    std::fs::copy(src.join(file), to)?;
+                    if let Some(contents) = icon_files.get(file) {
+                        std::fs::write(to, contents)?;
+                    } else {
+                        std::fs::copy(src.join(file), to)?;
+                    }
                 }
+                for name in LICENSE_FILES {
+                    if src.join(name).is_file() {
+                        std::fs::copy(src.join(name), staging.join(name))?;
+                    }
+                }
+                icon_theme::load_icon_themes(&staging, &manifest).map_err(std::io::Error::other)?;
                 if target.exists() {
                     std::fs::remove_dir_all(&target)?;
                 }
@@ -278,6 +322,9 @@ impl PluginHost {
         let theme_cleared = {
             let mut state = self.state.lock();
             state.disabled.remove(id);
+            if state.icon_theme.as_ref().is_some_and(|t| t.plugin == id) {
+                state.icon_theme = None;
+            }
             let owned = state.theme.as_ref().is_some_and(|t| t.plugin == id);
             if owned {
                 state.theme = None;
@@ -286,6 +333,7 @@ impl PluginHost {
         };
         self.save_state();
         self.emit(None, PluginEvent::CommandsChanged);
+        self.emit(None, PluginEvent::IconThemeChanged { theme: self.active_icon_theme() });
         if theme_cleared {
             self.emit(None, PluginEvent::ThemeChanged { theme: None });
         }
@@ -345,11 +393,43 @@ impl PluginHost {
             }
         }
         self.state.lock().theme =
-            selection.map(|(plugin, theme)| ThemeRef { plugin: plugin.into(), theme: theme.into() });
+            selection.map(|(plugin, theme)| ThemeRef { plugin: plugin.into(), theme: theme.into(), frame: None });
         self.save_state();
         let active = self.active_theme();
         self.emit(None, PluginEvent::ThemeChanged { theme: active.clone() });
         Ok(active)
+    }
+
+    /// Records the selected theme's resolved window frame colour (`#rgb`,
+    /// `#rrggbb` or `#rrggbbaa`); ignored without a selected theme.
+    pub fn set_theme_frame(&self, frame: Option<&str>) -> IdeResult<()> {
+        if let Some(f) = frame
+            && !is_hex_color(f)
+        {
+            return Err(IdeError::invalid(format!("not a hex colour: {f:?}")));
+        }
+        let changed = match self.state.lock().theme.as_mut() {
+            Some(t) if t.frame.as_deref() != frame => {
+                t.frame = frame.map(str::to_owned);
+                true
+            }
+            _ => false,
+        };
+        if changed {
+            self.save_state();
+        }
+        Ok(())
+    }
+
+    /// Frame colour for a new window: the recorded one of the selected theme,
+    /// unless its plugin is disabled. Available before plugins are loaded.
+    pub fn startup_frame(&self) -> Option<String> {
+        let state = self.state.lock();
+        let t = state.theme.as_ref()?;
+        if state.disabled.contains(&t.plugin) {
+            return None;
+        }
+        t.frame.clone()
     }
 
     /// The selected plugin theme, when its plugin is enabled and running.
@@ -361,6 +441,37 @@ impl PluginHost {
         }
         let theme = plugin.registrations.lock().themes.iter().find(|t| t.id == sel.theme).cloned()?;
         Some(ActiveTheme { plugin_id: sel.plugin, theme })
+    }
+
+    /// Icon selection is independent of the colour theme and always explicit.
+    /// Project-supplied packages must be installed before they can own global visuals.
+    pub fn set_icon_theme(&self, selection: Option<(&str, &str)>) -> IdeResult<Option<ActiveIconTheme>> {
+        let _guard = self.lifecycle.lock();
+        if let Some((id, theme)) = selection {
+            let p = self.get(id)?;
+            if p.source != PluginSource::Installed
+                || !p.is_live()
+                || !p.static_regs.icon_themes.iter().any(|t| t.id == theme)
+            {
+                return Err(IdeError::invalid("select an enabled, installed icon theme"));
+            }
+        }
+        self.state.lock().icon_theme =
+            selection.map(|(plugin, theme)| ThemeRef { plugin: plugin.into(), theme: theme.into(), frame: None });
+        self.save_state();
+        let active = self.active_icon_theme();
+        self.emit(None, PluginEvent::IconThemeChanged { theme: active.clone() });
+        Ok(active)
+    }
+
+    pub fn active_icon_theme(&self) -> Option<ActiveIconTheme> {
+        let sel = self.state.lock().icon_theme.clone()?;
+        let p = self.plugins.read().get(&sel.plugin).cloned()?;
+        if p.source != PluginSource::Installed || !p.is_live() {
+            return None;
+        }
+        let theme = p.static_regs.icon_themes.iter().find(|t| t.id == sel.theme)?.clone();
+        Some(ActiveIconTheme { plugin_id: sel.plugin, theme })
     }
 
     /// Languages contributed by live plugins (for runtime language registration).
@@ -409,6 +520,7 @@ impl PluginHost {
             dev_root,
             registrations: Arc::new(Mutex::new(static_regs.clone())),
             static_regs,
+            load_error: error.clone(),
             meta: Mutex::new(Meta { status: PluginStatus::Disabled, error: None }),
             runtime: Mutex::new(None),
         });
@@ -439,6 +551,10 @@ impl PluginHost {
     }
 
     fn start(&self, plugin: &Arc<LoadedPlugin>) {
+        if let Some(error) = &plugin.load_error {
+            plugin.set_failed(error.clone());
+            return;
+        }
         *plugin.registrations.lock() = plugin.static_regs.clone();
         let Some(wasm) = &plugin.manifest.wasm else {
             *plugin.meta.lock() = Meta { status: PluginStatus::Static, error: None };
@@ -507,6 +623,10 @@ impl PluginHost {
     }
 
     fn emit_theme_if_owned(&self, id: &str) {
+        let icons_owned = self.state.lock().icon_theme.as_ref().is_some_and(|t| t.plugin == id);
+        if icons_owned {
+            self.emit(None, PluginEvent::IconThemeChanged { theme: self.active_icon_theme() });
+        }
         let owned = self.state.lock().theme.as_ref().is_some_and(|t| t.plugin == id);
         if owned {
             self.emit(None, PluginEvent::ThemeChanged { theme: self.active_theme() });
@@ -553,6 +673,11 @@ impl PluginHost {
                     extensions: l.extensions.clone(),
                 })
                 .collect(),
+            icon_themes: regs
+                .icon_themes
+                .iter()
+                .map(|t| PluginIconTheme { id: t.id.clone(), name: t.name.clone() })
+                .collect(),
             themes: regs
                 .themes
                 .iter()
@@ -568,6 +693,10 @@ impl Drop for PluginHost {
     }
 }
 
+fn is_hex_color(s: &str) -> bool {
+    s.strip_prefix('#').is_some_and(|h| matches!(h.len(), 3 | 6 | 8) && h.bytes().all(|b| b.is_ascii_hexdigit()))
+}
+
 /// Plugin packages found in `dirs` (first occurrence of an id wins). Invalid
 /// manifests are skipped; packages with missing files carry a `problem`.
 pub fn scan_catalog(dirs: &[PathBuf]) -> Vec<CatalogPlugin> {
@@ -577,15 +706,18 @@ pub fn scan_catalog(dirs: &[PathBuf]) -> Vec<CatalogPlugin> {
         if out.iter().any(|c| c.id == m.id) {
             continue;
         }
-        let problem = m
-            .files()
-            .into_iter()
-            .find(|f| !dir.join(f).is_file())
-            .map(|f| format!("{} is missing; build the plugin first", f.display()));
+        let icon_problem = icon_theme::load_icon_themes(&dir, &m).err();
+        let problem = icon_problem.or_else(|| {
+            m.files()
+                .into_iter()
+                .find(|f| !dir.join(f).is_file())
+                .map(|f| format!("{} is missing; build the plugin first", f.display()))
+        });
         out.push(CatalogPlugin {
             has_code: m.wasm.is_some(),
             language_count: m.contributes.languages.len() as u32,
             theme_count: m.contributes.themes.len() as u32,
+            icon_theme_count: m.contributes.icon_themes.len() as u32,
             commands: m.contributes.commands.clone(),
             permissions: m.permissions.clone(),
             id: m.id,
@@ -619,7 +751,7 @@ fn package_dirs(dir: &Path) -> Vec<PathBuf> {
 }
 
 fn static_contributions(dir: &Path, m: &PluginManifest) -> Result<Registrations, String> {
-    let mut regs = Registrations::default();
+    let mut regs = Registrations { icon_themes: icon_theme::load_icon_themes(dir, m)?.0, ..Registrations::default() };
     for cmd in &m.contributes.commands {
         regs.add_command(cmd.clone());
     }

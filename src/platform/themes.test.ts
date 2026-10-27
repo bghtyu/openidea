@@ -1,11 +1,10 @@
 import { readFileSync } from "node:fs";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { BUILTIN_THEMES, isBuiltinTheme, themeKind } from "./themes";
 import { _setSchemeSource, effectiveScheme, schemeCss, schemeTokens, themeScheme } from "./colorScheme";
-import { applyThemeAttributes, resolveTheme, resolveThemeId, windowBackgroundColor } from "@/workbench/theme";
+import { applyThemeAttributes, resolveTheme, resolveThemeId } from "@/workbench/theme";
 import { validateSettings } from "@/features/settings/model/schema";
 import { applyPluginTheme } from "@/features/plugins/bridge";
-import { readTokens } from "@/features/settings/theme/contrast";
 
 const css = readFileSync("src/styles/tokens.css", "utf8");
 _setSchemeSource(css);
@@ -31,19 +30,6 @@ describe("built-in palettes", () => {
     expect(schemeTokens(id).get("--bg-editor")).not.toContain("var(");
   });
 
-  it("resolves native API colours to tuples instead of sending CSS HSL or mixes", () => {
-    const style = vi.spyOn(globalThis, "getComputedStyle");
-    try {
-      style.mockReturnValue({ color: "rgb(234, 234, 235)" } as CSSStyleDeclaration);
-      expect(windowBackgroundColor()).toEqual([234, 234, 235, 255]);
-      style.mockReturnValue({ color: "color(srgb 0.5 0.25 0.75 / 0.8)" } as CSSStyleDeclaration);
-      expect(windowBackgroundColor()).toEqual([128, 64, 191, 204]);
-      expect(document.documentElement.querySelector("span[hidden]")).toBeNull();
-    } finally {
-      style.mockRestore();
-    }
-  });
-
   it("rejects unknown ids and retains legacy fallbacks", () => {
     expect(isBuiltinTheme("not-a-theme")).toBe(false);
     expect(resolveThemeId({ theme: "bad" }, true)).toBe("light");
@@ -51,14 +37,8 @@ describe("built-in palettes", () => {
     expect(themeKind("solarized-light")).toBe("light");
   });
 
-  it("maps every existing colour token without leaking the Islands palette", () => {
-    const own = readTokens(css, ":root[data-color-theme]");
-    const base = readTokens(css, ':root[data-theme="light"]');
-    expect(
-      Object.keys(base).filter(
-        (k) => !/^--(project-color-|db-color-|caption-|fg-caption-|tint-strength)/.test(k) && !(k in own),
-      ),
-    ).toEqual([]);
+  // Token coverage of every palette theme: settings/__tests__/contrast.test.ts.
+  it("resolves editor scheme tokens from the palettes", () => {
     expect(schemeTokens("solarized-light").get("--bg-editor")).toBe("#fdf6e3");
     expect(schemeTokens("solarized-dark").get("--bg-editor")).toBe("#002b36");
     expect(schemeTokens("solarized-dark").get("--syn-string")).toBe("#2aa198");

@@ -57,21 +57,30 @@ it does not recreate Atom’s or Vim’s UI. Platform traffic-light colours stay
 platform colours. Original subdued comments and some syntax accents have lower
 contrast than a high-contrast accessibility theme; High Contrast remains available.
 
-`src-tauri/src/windows.rs` mirrors all frame colours for native window startup.
-The frontend resolves HSL and mixed frame tokens to RGB tuples before invoking
-Tauri’s native window API (which accepts hex strings or tuples, not CSS HSL).
-Native Settings startup uses the same conversion, serialized as hex for its
-existing string IPC contract, including before the child webview loads.
+Native windows open in the theme's frame colour before their page loads:
+`src-tauri/src/theme_frame.rs` reads `--bg-frame` of each built-in theme from
+`tokens.css` itself (resolving `var()` and `hsl()`), so there is no second
+colour table to keep in sync. Elsewhere the frontend resolves HSL and
+`color-mix()` tokens to RGB (`src/platform/cssColor.ts`) for Tauri's window
+API, the native Settings window, Mermaid and the terminal.
 
-The cache in `public/boot.js` restores the palette before application startup;
-`public/splash.css` mirrors the frame backgrounds before tokens load. The
-backend’s existing settings persistence remains authoritative. Terminal and
-editor observers also watch palette changes within the same light/dark kind.
-Custom accents, explicit editor schemes, per-scheme attribute overrides,
-compact mode and accessibility options retain their precedence.
+`public/boot.js` restores the palette (`data-color-theme`) and the splash's
+resolved frame, text and accent colours before the application stylesheet
+loads, so a restart in One Dark or Solarized shows no flash of another theme.
+The backend's settings persistence remains authoritative. Terminal, Mermaid
+and editor-scheme observers also watch palette changes within the same
+light/dark kind. Custom accents, explicit editor schemes, per-scheme attribute
+overrides, compact mode and accessibility options retain their precedence.
+
+`src/features/settings/__tests__/contrast.test.ts` requires every palette theme
+to define every colour token of the base themes (in the shared mapping or its
+own block), so a token added to `tokens.css` later can't silently fall back to
+an Islands colour.
 
 ## Browser evidence
 
+These approved screenshots are reused from the original theme implementation on
+0.1.15; regression checks are rerun against the upstream contribution base.
 Captured at 1400 × 900 in Linux Chromium 154 using OpenIDEA's public in-memory
 `acme-api` project / Kotlin fixture and synthetic ANSI terminal output. The
 terminal is a real xterm renderer, without a native PTY or shell. These images
@@ -88,7 +97,4 @@ focused controls, disabled settings and the selected theme popup.
 The browser regression also checks refresh / startup cache restoration,
 selection visibility, same-kind switches, the quick menu, existing themes,
 explicit editor schemes and preferred OS themes. Native startup colours are
-covered separately by Rust unit tests; browser checks of the RGB tuples do
-not replace native GUI acceptance. Native GUI, actual PTY rendering, OS theme
-events in a desktop webview, and macOS/Windows visual acceptance have not been
-run in this task.
+covered by Rust unit tests.

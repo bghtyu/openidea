@@ -128,6 +128,26 @@ describe("Settings dialog", () => {
     ]);
   });
 
+  it("edits and saves independent custom font weights", async () => {
+    const dialog = await openDialog("editor.font");
+    for (const [label, value] of [
+      ["Main font weight", "449"],
+      ["Bold font weight", "650"],
+    ]) {
+      fireEvent.click(within(dialog).getByRole("button", { name: label }));
+      fireEvent.click(screen.getByRole("option", { name: "Custom" }));
+      fireEvent.change(within(dialog).getByLabelText(`${label} custom value`), { target: { value } });
+    }
+    const preview = within(dialog).getByLabelText("Font preview");
+    expect(preview.style.getPropertyValue("--fw-code")).toBe("450");
+    expect(preview.style.getPropertyValue("--fw-code-bold")).toBe("650");
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Apply" })));
+    expect(settingsSet.mock.calls).toEqual([
+      ["global", "editor.boldFontWeight", "650"],
+      ["global", "editor.fontWeight", "450"],
+    ]);
+  });
+
   it("Cancel discards staged edits", async () => {
     const dialog = await openDialog("editor.codeStyle.other");
     fireEvent.change(within(dialog).getByLabelText("Tab size"), { target: { value: "2" } });
@@ -263,19 +283,21 @@ describe("Settings dialog", () => {
   });
 });
 
-describe("native Settings startup background", () => {
+describe("native Settings window background", () => {
   it.each([
-    ["Islands Light", "rgb(233, 234, 238)", "#e9eaee"],
-    ["Islands Dark", "rgb(38, 40, 44)", "#26282c"],
-    ["High Contrast", "rgb(26, 27, 30)", "#1a1b1e"],
-    ["Solarized Light", "rgb(238, 232, 213)", "#eee8d5"],
-    ["Solarized Dark", "rgb(7, 54, 66)", "#073642"],
-    ["One Light", "rgb(234, 234, 235)", "#eaeaeb"],
-    ["One Dark", "rgb(33, 37, 43)", "#21252b"],
-    ["mixed translucent plugin frame", "color(srgb 0.5 0.25 0.75 / 0.8)", "#8040bfcc"],
-  ])("sends a Tauri-compatible hex frame when opening %s Settings", async (_name, color, hex) => {
+    ["a hex frame", "#26282c", "", "#26282c"],
+    ["an hsl() frame", "hsl(220, 13%, 15%)", "rgb(33, 37, 43)", "#21252b"],
+    [
+      "a translucent color-mix() frame",
+      "color-mix(in srgb, #8040bf 80%, transparent)",
+      "color(srgb 0.5 0.25 0.75 / 0.8)",
+      "#8040bfcc",
+    ],
+  ])("sends %s as hex, the colour format the window command parses", async (_name, token, resolved, hex) => {
     const native = vi.spyOn(commands, "windowOpenSettings").mockResolvedValue({ status: "ok", data: null });
-    const computed = vi.spyOn(globalThis, "getComputedStyle").mockReturnValue({ color } as CSSStyleDeclaration);
+    const computed = vi
+      .spyOn(globalThis, "getComputedStyle")
+      .mockReturnValue({ getPropertyValue: () => token, color: resolved } as unknown as CSSStyleDeclaration);
     try {
       await executeAction("file.settings", "appearance");
       expect(native).toHaveBeenCalledWith("appearance", false, hex);

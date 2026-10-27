@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { call, commands, isTauri } from "@/platform/ipc";
 import { useProject } from "@/platform/project";
 import { BUILTIN_THEMES, isBuiltinTheme, themeKind, type BuiltinThemeId } from "@/platform/themes";
+import { resolveTokenColor, toHex } from "@/platform/cssColor";
 
 export type ThemeSetting = BuiltinThemeId | "system";
 /** PyCharm's brand blue: the accent both Islands themes ship with. */
@@ -65,7 +66,6 @@ export function useApplyTheme() {
   const id = override
     ? resolveThemeId({ theme: override }, systemLight)
     : resolveThemeId(appearance as AppearanceLike | undefined, systemLight);
-  const theme = themeKind(id);
   const accent = appearance?.accent;
 
   // Until settings arrive, keep the theme public/boot.js restored rather than the light default.
@@ -78,24 +78,13 @@ export function useApplyTheme() {
     const custom = !!accent && ACCENT_RE.test(accent) && !THEME_ACCENTS.has(accent.toLowerCase());
     if (custom) root.style.setProperty("--accent", accent);
     else root.style.removeProperty("--accent");
-    try {
-      localStorage.setItem(
-        "openidea.theme",
-        JSON.stringify({
-          theme: root.dataset.theme,
-          contrast: root.dataset.contrast,
-          colorTheme: root.dataset.colorTheme,
-        }),
-      );
-    } catch {
-      /* storage unavailable */
-    }
     syncWindowBackground();
-  }, [pending, theme, id, accent]);
+  }, [pending, id, accent]);
 }
 
 /**
- * Sets `data-theme` / `data-contrast` for a built-in theme id. While a plugin
+ * Sets `data-theme` / `data-contrast` / `data-color-theme` (the palette themes
+ * over a light / dark base, tokens.css) for a built-in theme id. While a plugin
  * theme is active (`data-plugin-theme-kind`), its light / dark base wins.
  */
 export function applyThemeAttributes(id: BuiltinThemeId, root: HTMLElement = document.documentElement) {
@@ -113,48 +102,63 @@ export function applyThemeAttributes(id: BuiltinThemeId, root: HTMLElement = doc
   else delete root.dataset.contrast;
 }
 
-/** Resolve CSS tokens (including HSL and mixes) to Tauri's RGB(A) tuple format. */
+/**
+ * The frame colour as Tauri's `[r, g, b, a]` (0–255). Tauri parses neither
+ * `hsl()` nor `color-mix()`, which themes may use, so it is resolved here.
+ */
 export function windowBackgroundColor(
   root: HTMLElement = document.documentElement,
 ): [number, number, number, number] | null {
-  const probe = root.ownerDocument.createElement("span");
-  probe.hidden = true;
-  probe.style.color = "var(--bg-frame)";
-  root.appendChild(probe);
-  const color = getComputedStyle(probe).color;
-  probe.remove();
-  const match = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/.exec(color);
-  if (match)
-    return [
-      Math.round(Number(match[1])),
-      Math.round(Number(match[2])),
-      Math.round(Number(match[3])),
-      Math.round(Number(match[4] ?? 1) * 255),
-    ];
-  const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\s*\)$/.exec(color);
-  if (!srgb) return null;
-  return [
-    Math.round(Number(srgb[1]) * 255),
-    Math.round(Number(srgb[2]) * 255),
-    Math.round(Number(srgb[3]) * 255),
-    Math.round(Number(srgb[4] ?? 1) * 255),
-  ];
+  const c = resolveTokenColor("--bg-frame", root);
+  if (!c) return null;
+  const [r, g, b, a] = c;
+  return [Math.round(r), Math.round(g), Math.round(b), Math.round(a * 255)];
 }
 
-/** Hex serialization for native window commands whose IPC contract is a string. */
+/** The frame colour as `#rrggbb[aa]`, for native window commands that take a string. */
 export function windowBackgroundHex(root: HTMLElement = document.documentElement): string | null {
-  const color = windowBackgroundColor(root);
-  if (!color) return null;
-  const bytes = color[3] === 255 ? color.slice(0, 3) : color;
-  return `#${bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  const c = resolveTokenColor("--bg-frame", root);
+  return c ? toHex(c) : null;
+}
+
+/** localStorage key read by public/boot.js. */
+export const STARTUP_THEME_KEY = "openidea.theme";
+
+/**
+ * Remembers the theme for public/boot.js, which applies it to the next window
+ * before any stylesheet loads: the light / dark base, and the resolved frame,
+ * text and accent colours its splash is painted in.
+ */
+export function rememberStartupTheme(root: HTMLElement = document.documentElement) {
+  const hex = (name: string) => {
+    const c = resolveTokenColor(name, root);
+    return c ? toHex(c) : undefined;
+  };
+  try {
+    localStorage.setItem(
+      STARTUP_THEME_KEY,
+      JSON.stringify({
+        theme: root.dataset.theme,
+        contrast: root.dataset.contrast,
+        colorTheme: root.dataset.colorTheme,
+        frame: hex("--bg-frame"),
+        fg: hex("--fg-muted"),
+        accent: hex("--accent"),
+      }),
+    );
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 /**
  * Where a live resize outruns the page, the native window and the webview (WebView2's default
  * background) show their own colours; match both to the frame. The webview one is only set at
- * window creation otherwise, so a theme switched later left it light.
+ * window creation otherwise, so a theme switched later left it light. Also remembers the theme
+ * for the next window's start-up.
  */
 export function syncWindowBackground() {
+  rememberStartupTheme();
   if (!isTauri()) return;
   const color = windowBackgroundColor();
   if (!color) return;
@@ -184,8 +188,7 @@ export async function setTheme(next: ThemeSetting) {
   try {
     let settings = await call(commands.settingsSet("global", "appearance.theme", JSON.stringify(next)));
     // An explicit choice ends "Sync with OS", as in IDEA.
-    if (settings.appearance?.syncWithOs)
-      settings = await call(commands.settingsSet("global", "appearance.syncWithOs", "false"));
+    if (settings.appearance?.syncWithOs) settings = await call(commands.settingsSet("global", "appearance.syncWithOs", "false"));
     useProject.setState({ settings });
     useThemeOverride.setState({ theme: null });
   } catch {

@@ -22,6 +22,33 @@ fn sample(name: &str) -> PathBuf {
     repo().join("plugins").join(name)
 }
 
+fn theme_template() -> PathBuf {
+    repo().join("templates/theme-plugin")
+}
+
+/// A theme package with a light and a dark theme, plus licence files, in `dir`.
+fn write_theme_pair(dir: &Path) {
+    std::fs::create_dir_all(dir.join("t")).unwrap();
+    std::fs::write(
+        dir.join("plugin.toml"),
+        "id = \"theme-pair\"\nname = \"Pair\"\nversion = \"1.0.0\"\nopenidea-api = \"0.1\"\n\
+         [[contributes.themes]]\npath = \"t/day.json\"\n[[contributes.themes]]\npath = \"t/night.json\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("t/day.json"),
+        r##"{"id":"day","name":"Day","kind":"light","tokens":{"--bg-frame":"#eeeeee"}}"##,
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("t/night.json"),
+        r##"{"id":"night","name":"Night","kind":"dark","tokens":{"--bg-frame":"#111111"}}"##,
+    )
+    .unwrap();
+    std::fs::write(dir.join("LICENSE"), "MIT License\n").unwrap();
+    std::fs::write(dir.join("NOTICE"), "Palette notice\n").unwrap();
+}
+
 fn misbehave_pkg() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/misbehave")
 }
@@ -217,10 +244,11 @@ fn runtime_language_and_theme_registration() {
 #[test]
 fn contribution_only_plugins() {
     let f = fixture(Limits::default());
-    let theme = f.host.install_from_dir(&sample("theme-solarized-dark")).unwrap();
+    let theme = f.host.install_from_dir(&theme_template()).unwrap();
     assert_eq!(theme.status, PluginStatus::Static);
     assert!(!theme.has_code);
-    assert_eq!(theme.themes[0].id, "solarized-dark");
+    let ids: Vec<&str> = theme.themes.iter().map(|t| t.id.as_str()).collect();
+    assert_eq!(ids, ["harbor-night"]);
     let lang = f.host.install_from_dir(&sample("language-toy")).unwrap();
     assert_eq!(lang.status, PluginStatus::Static);
     assert_eq!(lang.languages[0].id, "toy");
@@ -228,13 +256,14 @@ fn contribution_only_plugins() {
     assert!(f.run("language-toy", "x", None).unwrap_err().contains("no code"));
 
     f.take_events();
-    let active = f.host.set_theme(Some(("theme-solarized-dark", "solarized-dark"))).unwrap().unwrap();
-    assert_eq!(active.theme.tokens["--bg-app"], "#002b36");
+    let active = f.host.set_theme(Some(("theme-harbor-night", "harbor-night"))).unwrap().unwrap();
+    assert_eq!(active.theme.tokens["--bg-app"], "#14171c");
+    assert_eq!(active.theme.tokens["--syn-string"], "#9ccc7a");
     assert!(f.take_events().iter().any(|(_, e)| matches!(e, PluginEvent::ThemeChanged { theme: Some(_) })));
     assert_eq!(f.host.list(None).active_theme, Some(active));
 
     // Disabling the plugin withdraws its theme and language.
-    f.host.set_enabled("theme-solarized-dark", false).unwrap();
+    f.host.set_enabled("theme-harbor-night", false).unwrap();
     assert!(f.host.active_theme().is_none());
     assert!(f.take_events().iter().any(|(_, e)| *e == PluginEvent::ThemeChanged { theme: None }));
     f.host.set_enabled("language-toy", false).unwrap();
@@ -245,7 +274,7 @@ fn contribution_only_plugins() {
 #[test]
 fn theme_template_installs_with_its_editor_scheme() {
     let f = fixture(Limits::default());
-    let info = f.host.install_from_dir(&repo().join("templates/theme-plugin")).unwrap();
+    let info = f.host.install_from_dir(&theme_template()).unwrap();
     assert_eq!(info.status, PluginStatus::Static);
     assert!(!info.has_code);
     assert_eq!(info.themes[0].id, "harbor-night");
@@ -258,6 +287,47 @@ fn theme_template_installs_with_its_editor_scheme() {
         tokens.contains_key("--bg-app") && tokens.contains_key("--syn-keyword") && tokens.contains_key("--ansi-red")
     );
     assert!(tokens.len() > 150);
+}
+
+#[test]
+fn theme_packages_install_with_their_licence() {
+    let f = fixture(Limits::default());
+    let dir = tempfile::tempdir().unwrap();
+    write_theme_pair(dir.path());
+    let info = f.host.install_from_dir(dir.path()).unwrap();
+    assert_eq!(info.status, PluginStatus::Static, "{:?}", info.error);
+    let installed = f.plugins_dir.join("theme-pair");
+    assert!(std::fs::read_to_string(installed.join("LICENSE")).unwrap().contains("MIT License"));
+    assert!(installed.join("NOTICE").is_file());
+    for (theme, kind) in [("day", ThemeKind::Light), ("night", ThemeKind::Dark)] {
+        let active = f.host.set_theme(Some(("theme-pair", theme))).unwrap().unwrap();
+        assert_eq!(active.theme.kind, kind);
+    }
+}
+
+#[test]
+fn theme_frame_follows_the_selection() {
+    let f = fixture(Limits::default());
+    let dir = tempfile::tempdir().unwrap();
+    write_theme_pair(dir.path());
+    f.host.install_from_dir(dir.path()).unwrap();
+    // Nothing to attach it to without a selected theme.
+    f.host.set_theme_frame(Some("#111111")).unwrap();
+    assert_eq!(f.host.startup_frame(), None);
+    f.host.set_theme(Some(("theme-pair", "night"))).unwrap();
+    assert!(f.host.set_theme_frame(Some("hsl(220, 13%, 15%)")).is_err());
+    f.host.set_theme_frame(Some("#111111")).unwrap();
+    assert_eq!(f.host.startup_frame().as_deref(), Some("#111111"));
+    f.host.set_enabled("theme-pair", false).unwrap();
+    assert_eq!(f.host.startup_frame(), None);
+    f.host.set_enabled("theme-pair", true).unwrap();
+    assert_eq!(f.host.startup_frame().as_deref(), Some("#111111"));
+    // A new selection drops the old theme's colour until the UI reports the new one.
+    f.host.set_theme(Some(("theme-pair", "day"))).unwrap();
+    assert_eq!(f.host.startup_frame(), None);
+    f.host.set_theme_frame(Some("#eeeeee")).unwrap();
+    f.host.set_theme(None).unwrap();
+    assert_eq!(f.host.startup_frame(), None);
 }
 
 #[test]
@@ -282,17 +352,22 @@ fn theme_with_broken_editor_scheme_fails_to_load() {
 fn state_persists_across_restarts() {
     let f = fixture(Limits::default());
     f.host.install_from_dir(&sample("hello")).unwrap();
-    f.host.install_from_dir(&sample("theme-solarized-dark")).unwrap();
+    f.host.install_from_dir(&theme_template()).unwrap();
     f.host.set_enabled("hello", false).unwrap();
-    f.host.set_theme(Some(("theme-solarized-dark", "solarized-dark"))).unwrap();
+    f.host.set_theme(Some(("theme-harbor-night", "harbor-night"))).unwrap();
+    f.host.set_theme_frame(Some("#1f252e")).unwrap();
 
     let again = PluginHost::new(f.plugins_dir.clone(), Arc::new(|_: Option<&str>, _| {}), Limits::default()).unwrap();
+    // Known before the plugins are loaded: new windows open in the theme's frame colour.
+    assert_eq!(again.startup_frame().as_deref(), Some("#1f252e"));
+    assert!(!again.wait_initial_load(Duration::from_millis(1)));
     again.load_all();
+    assert!(again.wait_initial_load(Duration::ZERO));
     let list = again.list(None);
     let hello = list.plugins.iter().find(|p| p.id == "hello").unwrap();
     assert!(!hello.enabled);
     assert_eq!(hello.status, PluginStatus::Disabled);
-    assert_eq!(list.active_theme.unwrap().theme.id, "solarized-dark");
+    assert_eq!(list.active_theme.unwrap().theme.id, "harbor-night");
     assert!(
         again
             .run_command("hello", "insert-date", None, Invocation::default())
@@ -386,16 +461,147 @@ fn catalog_lists_sample_packages() {
     std::fs::create_dir_all(tmp.path().join("junk")).unwrap();
     std::fs::write(tmp.path().join("junk/plugin.toml"), "garbage = ").unwrap();
 
-    let catalog = scan_catalog(&[repo().join("plugins"), tmp.path().to_path_buf()]);
+    let catalog = scan_catalog(&[repo().join("plugins"), repo().join("templates"), tmp.path().to_path_buf()]);
     let ids: Vec<&str> = catalog.iter().map(|c| c.id.as_str()).collect();
-    for id in ["hello", "theme-solarized-dark", "language-toy", "x"] {
+    for id in ["hello", "theme-harbor-night", "language-toy", "x"] {
         assert!(ids.contains(&id), "{id} missing from {ids:?}");
     }
     let hello = catalog.iter().find(|c| c.id == "hello").unwrap();
     assert!(hello.has_code && hello.problem.is_none() && hello.change_notes.is_some());
     assert_eq!(hello.commands.len(), 2);
-    let theme = catalog.iter().find(|c| c.id == "theme-solarized-dark").unwrap();
+    let theme = catalog.iter().find(|c| c.id == "theme-harbor-night").unwrap();
     assert_eq!((theme.theme_count, theme.has_code), (1, false));
     let x = catalog.iter().find(|c| c.id == "x").unwrap();
     assert!(x.problem.as_deref().unwrap().contains("plugin.wasm"));
+}
+
+fn icon_package(dir: &Path, id: &str) {
+    std::fs::create_dir_all(dir.join("icons")).unwrap();
+    std::fs::write(dir.join("plugin.toml"), format!("id = {id:?}\nname = \"Icons\"\nversion = \"1.0.0\"\nopenidea-api = \"0.1\"\n[[contributes.icon-themes]]\npath = \"icons.json\"\n")).unwrap();
+    std::fs::write(dir.join("LICENSE"), "MIT - test artwork").unwrap();
+    std::fs::write(dir.join("icons/file.svg"), "<svg viewBox='0 0 16 16'><path fill='#ff0000' d='M0 0h16v16z'/></svg>")
+        .unwrap();
+    std::fs::write(dir.join("icons.json"), r#"{"id":"test","name":"Test Icons","icons":{"f":{"light":"icons/file.svg"}},"rules":{"file":"f","folder":{"icon":"f"}},"notices":["LICENSE"]}"#).unwrap();
+}
+
+#[test]
+fn icon_theme_lifecycle_is_independent_persistent_and_explicit() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    let info = f.host.install_from_dir(&package).unwrap();
+    assert_eq!(info.status, PluginStatus::Static);
+    assert!(!info.has_code && info.permissions.is_empty());
+    assert_eq!(info.icon_themes[0].id, "test");
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.plugins_dir.join("icons/icons/file.svg").is_file());
+    assert!(f.plugins_dir.join("icons/LICENSE").is_file());
+    f.host.install_from_dir(&repo().join("templates/theme-plugin")).unwrap();
+    f.host.set_theme(Some(("theme-harbor-night", "harbor-night"))).unwrap();
+    f.host.set_theme_frame(Some("#1f252e")).unwrap();
+    let active = f.host.set_icon_theme(Some(("icons", "test"))).unwrap().unwrap();
+    assert_eq!(f.host.startup_frame().as_deref(), Some("#1f252e"));
+    assert_eq!(f.host.list(None).active_icon_theme, Some(active.clone()));
+    assert!(f.host.active_theme().is_some());
+    let restored =
+        PluginHost::new(f.plugins_dir.clone(), Arc::new(|_: Option<&str>, _: PluginEvent| {}), Limits::default())
+            .unwrap();
+    restored.load_all();
+    assert_eq!(restored.active_icon_theme(), Some(active));
+    drop(restored);
+    f.host.set_enabled("icons", false).unwrap();
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.host.set_icon_theme(Some(("icons", "test"))).is_err());
+    assert!(f.host.active_theme().is_some());
+    f.host.set_enabled("icons", true).unwrap();
+    assert!(f.host.active_icon_theme().is_some());
+    std::fs::write(f.plugins_dir.join("icons/icons/file.svg"), "<svg><script/></svg>").unwrap();
+    assert_eq!(f.host.reload("icons").unwrap().status, PluginStatus::Failed);
+    assert!(f.host.active_icon_theme().is_none());
+    f.host.set_enabled("icons", false).unwrap();
+    f.host.set_enabled("icons", true).unwrap();
+    assert_eq!(f.status("icons"), PluginStatus::Failed);
+    f.host.uninstall("icons").unwrap();
+    let restored =
+        PluginHost::new(f.plugins_dir.clone(), Arc::new(|_: Option<&str>, _: PluginEvent| {}), Limits::default())
+            .unwrap();
+    restored.load_all();
+    assert!(restored.active_icon_theme().is_none());
+    assert!(f.take_events().iter().any(|(_, e)| matches!(e, PluginEvent::IconThemeChanged { theme: None })));
+}
+
+#[test]
+fn rejects_malformed_icon_updates_without_replacing_installed_package() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    f.host.install_from_dir(&package).unwrap();
+    f.host.set_icon_theme(Some(("icons", "test"))).unwrap();
+    let old = f.host.active_icon_theme().unwrap();
+    let original = std::fs::read_to_string(package.join("icons.json")).unwrap();
+    for invalid in [
+        original.replace("icons/file.svg", "../secret.txt"),
+        original.replace("icons/file.svg", "/etc/passwd"),
+        original.replace("icons/file.svg", "missing.svg"),
+        original.replace("icons/file.svg", "https://evil/icon.svg"),
+        original.replace("\"file\":\"f\"", "\"file\":\"missing\""),
+        original.replace("\"notices\":[\"LICENSE\"]", "\"notices\":[]"),
+    ] {
+        std::fs::write(package.join("icons.json"), invalid).unwrap();
+        assert!(f.host.install_from_dir(&package).is_err());
+        assert_eq!(f.host.active_icon_theme(), Some(old.clone()));
+    }
+    std::fs::write(package.join("icons.json"), &original).unwrap();
+    for svg in [
+        "<svg onload='evil()'/>",
+        "<svg><path fill='url(https://evil)'/></svg>",
+        "<svg><path fill='url(#missing)'/></svg>",
+    ] {
+        std::fs::write(package.join("icons/file.svg"), svg).unwrap();
+        assert!(f.host.install_from_dir(&package).is_err());
+        assert_eq!(f.host.active_icon_theme(), Some(old.clone()));
+    }
+    std::fs::write(package.join("icons/file.svg"), "x".repeat(65537)).unwrap();
+    assert!(f.host.install_from_dir(&package).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn icon_resource_symlinks_must_stay_inside_package() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    let outside = f._tmp.path().join("outside.svg");
+    std::fs::write(&outside, "<svg/>").unwrap();
+    std::fs::remove_file(package.join("icons/file.svg")).unwrap();
+    std::os::unix::fs::symlink(&outside, package.join("icons/file.svg")).unwrap();
+    assert!(f.host.install_from_dir(&package).unwrap_err().message.contains("outside plugin"));
+    std::fs::remove_file(package.join("icons/file.svg")).unwrap();
+    std::fs::write(package.join("inside.svg"), "<svg/>").unwrap();
+    std::os::unix::fs::symlink("../inside.svg", package.join("icons/file.svg")).unwrap();
+    assert_eq!(f.host.install_from_dir(&package).unwrap().status, PluginStatus::Static);
+    assert!(!f.plugins_dir.join("icons/icons/file.svg").is_symlink());
+}
+
+#[test]
+fn opening_project_never_selects_dev_icons() {
+    let f = fixture(Limits::default());
+    icon_package(&f.project.join(".openidea/plugins/icons"), "icons");
+    f.host.sync_project(&f.project);
+    assert_eq!(f.host.info_of("icons").unwrap().icon_themes.len(), 1);
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.host.set_icon_theme(Some(("icons", "test"))).is_err());
+}
+
+#[test]
+fn material_style_package_installs_all_declared_assets_and_notices() {
+    let f = fixture(Limits::default());
+    let info = f.host.install_from_dir(&sample("icon-theme-atom-material")).unwrap();
+    assert_eq!(info.status, PluginStatus::Static, "{:?}", info.error);
+    let active = f.host.set_icon_theme(Some((&info.id, "atom-material"))).unwrap().unwrap();
+    assert!(active.theme.icons.len() > 50);
+    assert!(f.plugins_dir.join(&info.id).join("NOTICE").is_file());
+    assert!(f.plugins_dir.join(&info.id).join("provenance.json").is_file());
+    let catalog = scan_catalog(&[repo().join("plugins")]);
+    assert_eq!(catalog.iter().find(|p| p.id == info.id).unwrap().icon_theme_count, 1);
 }
