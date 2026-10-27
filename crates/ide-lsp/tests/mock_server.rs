@@ -157,7 +157,25 @@ impl Launcher for MockLauncher {
         state.docs.lock().clear();
         let (client_io, server_io) = tokio::io::duplex(1 << 20);
         let (sr, sw) = tokio::io::split(server_io);
-        let server = Peer::connect(sr, sw, Arc::new(MockHandler(state.clone())));
+        let mock_handler = Arc::new(MockHandler(state.clone()));
+        let (ordered_reader, mut forward) = tokio::io::duplex(1 << 20);
+        let server = Peer::connect(ordered_reader, sw, mock_handler.clone());
+        // Peer dispatches notifications and requests on different workers. An LSP
+        // mock must apply earlier didOpen/didChange messages before a request can
+        // inspect its documents; otherwise a widened rename can miss its didOpen.
+        tokio::spawn(async move {
+            let mut reader = tokio::io::BufReader::new(sr);
+            while let Ok(Some(body)) = ide_jsonrpc::framing::read_message(&mut reader).await {
+                let message: Value = serde_json::from_slice(&body).expect("mock receives JSON-RPC");
+                if message.get("id").is_none_or(Value::is_null)
+                    && let Some(method) = message["method"].as_str()
+                {
+                    mock_handler.on_notification(method, message.get("params").cloned().unwrap_or(Value::Null));
+                } else if ide_jsonrpc::framing::write_message(&mut forward, &body).await.is_err() {
+                    break;
+                }
+            }
+        });
         *state.peer.lock() = Some(server);
         let (cr, cw) = tokio::io::split(client_io);
         Ok(Peer::connect(cr, cw, handler))
