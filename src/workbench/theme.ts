@@ -4,8 +4,9 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { create } from "zustand";
 import { call, commands, isTauri } from "@/platform/ipc";
 import { useProject } from "@/platform/project";
+import { BUILTIN_THEMES, isBuiltinTheme, themeKind, type BuiltinThemeId } from "@/platform/themes";
 
-export type ThemeSetting = "dark" | "light" | "system" | "dark-hc";
+export type ThemeSetting = BuiltinThemeId | "system";
 /** PyCharm's brand blue: the accent both Islands themes ship with. */
 export const DEFAULT_ACCENT = "#3871e1";
 /** Accent presets (Settings › Appearance, Welcome › Customize); the first is the Islands default. */
@@ -43,8 +44,8 @@ interface AppearanceLike {
  * Concrete theme id: the chosen theme, or with "Sync with OS" (legacy
  * `theme = "system"`) the preferred light / dark theme for the OS mode.
  */
-export function resolveThemeId(a: AppearanceLike | undefined, systemLight: boolean): "dark" | "light" | "dark-hc" {
-  const concrete = (v: string | undefined, d: "dark" | "light") => (v === "dark" || v === "light" || v === "dark-hc" ? v : d);
+export function resolveThemeId(a: AppearanceLike | undefined, systemLight: boolean): BuiltinThemeId {
+  const concrete = (v: string | undefined, d: "dark" | "light") => (isBuiltinTheme(v) ? v : d);
   if (a?.syncWithOs || a?.theme === "system")
     return systemLight ? concrete(a?.preferredLightTheme, "light") : concrete(a?.preferredDarkTheme, "dark");
   return concrete(a?.theme, "light");
@@ -52,7 +53,7 @@ export function resolveThemeId(a: AppearanceLike | undefined, systemLight: boole
 
 /** `dark-hc` resolves to `dark` plus `data-contrast="high"`. */
 export function resolveTheme(setting: string | undefined, systemLight: boolean): "dark" | "light" {
-  return resolveThemeId({ theme: setting }, systemLight) === "light" ? "light" : "dark";
+  return themeKind(resolveThemeId({ theme: setting }, systemLight));
 }
 
 const ACCENT_RE = /^#[0-9a-f]{3,8}$/i;
@@ -64,7 +65,7 @@ export function useApplyTheme() {
   const id = override
     ? resolveThemeId({ theme: override }, systemLight)
     : resolveThemeId(appearance as AppearanceLike | undefined, systemLight);
-  const theme = id === "light" ? "light" : "dark";
+  const theme = themeKind(id);
   const accent = appearance?.accent;
 
   // Until settings arrive, keep the theme public/boot.js restored rather than the light default.
@@ -78,7 +79,14 @@ export function useApplyTheme() {
     if (custom) root.style.setProperty("--accent", accent);
     else root.style.removeProperty("--accent");
     try {
-      localStorage.setItem("openidea.theme", JSON.stringify({ theme, contrast: root.dataset.contrast }));
+      localStorage.setItem(
+        "openidea.theme",
+        JSON.stringify({
+          theme: root.dataset.theme,
+          contrast: root.dataset.contrast,
+          colorTheme: root.dataset.colorTheme,
+        }),
+      );
     } catch {
       /* storage unavailable */
     }
@@ -90,16 +98,55 @@ export function useApplyTheme() {
  * Sets `data-theme` / `data-contrast` for a built-in theme id. While a plugin
  * theme is active (`data-plugin-theme-kind`), its light / dark base wins.
  */
-export function applyThemeAttributes(id: "dark" | "light" | "dark-hc", root: HTMLElement = document.documentElement) {
+export function applyThemeAttributes(id: BuiltinThemeId, root: HTMLElement = document.documentElement) {
   const pluginKind = root.dataset.pluginThemeKind;
   if (pluginKind === "light" || pluginKind === "dark") {
+    delete root.dataset.colorTheme;
     root.dataset.theme = pluginKind;
     delete root.dataset.contrast;
     return;
   }
-  root.dataset.theme = id === "light" ? "light" : "dark";
+  if (id === "light" || id === "dark" || id === "dark-hc") delete root.dataset.colorTheme;
+  else root.dataset.colorTheme = id;
+  root.dataset.theme = themeKind(id);
   if (id === "dark-hc") root.dataset.contrast = "high";
   else delete root.dataset.contrast;
+}
+
+/** Resolve CSS tokens (including HSL and mixes) to Tauri's RGB(A) tuple format. */
+export function windowBackgroundColor(
+  root: HTMLElement = document.documentElement,
+): [number, number, number, number] | null {
+  const probe = root.ownerDocument.createElement("span");
+  probe.hidden = true;
+  probe.style.color = "var(--bg-frame)";
+  root.appendChild(probe);
+  const color = getComputedStyle(probe).color;
+  probe.remove();
+  const match = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/.exec(color);
+  if (match)
+    return [
+      Math.round(Number(match[1])),
+      Math.round(Number(match[2])),
+      Math.round(Number(match[3])),
+      Math.round(Number(match[4] ?? 1) * 255),
+    ];
+  const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\s*\)$/.exec(color);
+  if (!srgb) return null;
+  return [
+    Math.round(Number(srgb[1]) * 255),
+    Math.round(Number(srgb[2]) * 255),
+    Math.round(Number(srgb[3]) * 255),
+    Math.round(Number(srgb[4] ?? 1) * 255),
+  ];
+}
+
+/** Hex serialization for native window commands whose IPC contract is a string. */
+export function windowBackgroundHex(root: HTMLElement = document.documentElement): string | null {
+  const color = windowBackgroundColor(root);
+  if (!color) return null;
+  const bytes = color[3] === 255 ? color.slice(0, 3) : color;
+  return `#${bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
 /**
@@ -109,7 +156,7 @@ export function applyThemeAttributes(id: "dark" | "light" | "dark-hc", root: HTM
  */
 export function syncWindowBackground() {
   if (!isTauri()) return;
-  const color = getComputedStyle(document.documentElement).getPropertyValue("--bg-frame").trim();
+  const color = windowBackgroundColor();
   if (!color) return;
   getCurrentWebviewWindow()
     .setBackgroundColor(color)
@@ -117,18 +164,14 @@ export function syncWindowBackground() {
 }
 
 export function currentTheme(): "dark" | "light" {
-  return currentThemeId() === "light" ? "light" : "dark";
+  return themeKind(currentThemeId());
 }
 
 /** Themes offered by quick switch menus, in IDEA's order. */
-export const THEME_CHOICES: ReadonlyArray<{ id: "light" | "dark" | "dark-hc"; label: string }> = [
-  { id: "light", label: "Islands Light" },
-  { id: "dark", label: "Islands Dark" },
-  { id: "dark-hc", label: "High Contrast" },
-];
+export const THEME_CHOICES = BUILTIN_THEMES;
 
 /** The concrete theme in effect (`dark-hc` kept distinct). */
-export function currentThemeId(): "dark" | "light" | "dark-hc" {
+export function currentThemeId(): BuiltinThemeId {
   const override = useThemeOverride.getState().theme;
   return override
     ? resolveThemeId({ theme: override }, prefersLight())
@@ -141,7 +184,8 @@ export async function setTheme(next: ThemeSetting) {
   try {
     let settings = await call(commands.settingsSet("global", "appearance.theme", JSON.stringify(next)));
     // An explicit choice ends "Sync with OS", as in IDEA.
-    if (settings.appearance?.syncWithOs) settings = await call(commands.settingsSet("global", "appearance.syncWithOs", "false"));
+    if (settings.appearance?.syncWithOs)
+      settings = await call(commands.settingsSet("global", "appearance.syncWithOs", "false"));
     useProject.setState({ settings });
     useThemeOverride.setState({ theme: null });
   } catch {

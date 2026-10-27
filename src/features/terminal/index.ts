@@ -23,7 +23,12 @@ function focusActiveSoon() {
 }
 
 function shellName(path: string): string {
-  return path.split(/[\\/]/).pop()!.replace(/\.exe$/i, "") || path;
+  return (
+    path
+      .split(/[\\/]/)
+      .pop()!
+      .replace(/\.exe$/i, "") || path
+  );
 }
 
 async function openNewTab(dir?: string) {
@@ -195,7 +200,10 @@ export function activate(): () => void {
       terminalRuntime()?.applyThemeToAll();
       terminalRuntime()?.applyThemeToEmbedded();
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "style"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "data-contrast", "data-color-theme", "style"],
+    });
     disposers.push(() => observer.disconnect());
   }
 
