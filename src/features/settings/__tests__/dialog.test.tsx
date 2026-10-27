@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import type { Settings } from "@/platform/ipc";
+import { commands, type Settings } from "@/platform/ipc";
 
 const settingsSet = vi.fn();
 const settingsGet = vi.fn();
@@ -260,5 +260,29 @@ describe("Settings dialog", () => {
     const dialog = await openDialog("appearance");
     expect(within(dialog).getByRole("button", { name: "Theme" })).toHaveTextContent("Islands Light");
     expect(within(dialog).getByLabelText("UI font size")).toHaveValue("13");
+  });
+});
+
+describe("native Settings startup background", () => {
+  it.each([
+    ["Islands Light", "rgb(233, 234, 238)", "#e9eaee"],
+    ["Islands Dark", "rgb(38, 40, 44)", "#26282c"],
+    ["High Contrast", "rgb(26, 27, 30)", "#1a1b1e"],
+    ["Solarized Light", "rgb(238, 232, 213)", "#eee8d5"],
+    ["Solarized Dark", "rgb(7, 54, 66)", "#073642"],
+    ["One Light", "rgb(234, 234, 235)", "#eaeaeb"],
+    ["One Dark", "rgb(33, 37, 43)", "#21252b"],
+    ["mixed translucent plugin frame", "color(srgb 0.5 0.25 0.75 / 0.8)", "#8040bfcc"],
+  ])("sends a Tauri-compatible hex frame when opening %s Settings", async (_name, color, hex) => {
+    const native = vi.spyOn(commands, "windowOpenSettings").mockResolvedValue({ status: "ok", data: null });
+    const computed = vi.spyOn(globalThis, "getComputedStyle").mockReturnValue({ color } as CSSStyleDeclaration);
+    try {
+      await executeAction("file.settings", "appearance");
+      expect(native).toHaveBeenCalledWith("appearance", false, hex);
+      expect(useSettingsDialog.getState().open).toBe(false);
+    } finally {
+      computed.mockRestore();
+      native.mockRestore();
+    }
   });
 });

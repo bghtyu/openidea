@@ -490,6 +490,20 @@ mod tests {
     }
 
     #[test]
+    fn settings_startup_accepts_serialized_one_and_solarized_frame_colours() {
+        for (hex, expected) in [
+            ("#eaeaeb", Color(0xea, 0xea, 0xeb, 0xff)),
+            ("#21252b", Color(0x21, 0x25, 0x2b, 0xff)),
+            ("#eee8d5", Color(0xee, 0xe8, 0xd5, 0xff)),
+            ("#073642", Color(0x07, 0x36, 0x42, 0xff)),
+            ("#8040bfcc", Color(0x80, 0x40, 0xbf, 0xcc)),
+        ] {
+            let parsed: Color = serde_json::from_value(serde_json::Value::String(hex.into())).unwrap();
+            assert_eq!(parsed, expected);
+        }
+    }
+
+    #[test]
     fn labels_sort_main_first_then_numerically() {
         assert_eq!(
             sorted_labels(["project-10", "project-2", "main", "x"]),

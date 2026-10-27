@@ -141,6 +141,14 @@ export function windowBackgroundColor(
   ];
 }
 
+/** Hex serialization for native window commands whose IPC contract is a string. */
+export function windowBackgroundHex(root: HTMLElement = document.documentElement): string | null {
+  const color = windowBackgroundColor(root);
+  if (!color) return null;
+  const bytes = color[3] === 255 ? color.slice(0, 3) : color;
+  return `#${bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
 /**
  * Where a live resize outruns the page, the native window and the webview (WebView2's default
  * background) show their own colours; match both to the frame. The webview one is only set at

@@ -60,6 +60,8 @@ contrast than a high-contrast accessibility theme; High Contrast remains availab
 `src-tauri/src/windows.rs` mirrors all frame colours for native window startup.
 The frontend resolves HSL and mixed frame tokens to RGB tuples before invoking
 Tauri’s native window API (which accepts hex strings or tuples, not CSS HSL).
+Native Settings startup uses the same conversion, serialized as hex for its
+existing string IPC contract, including before the child webview loads.
 
 The cache in `public/boot.js` restores the palette before application startup;
 `public/splash.css` mirrors the frame backgrounds before tokens load. The

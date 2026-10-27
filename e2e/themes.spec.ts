@@ -75,10 +75,18 @@ for (const palette of palettes) {
     expect(
       await page.evaluate(async () => {
         const path = "/src/workbench/theme.ts";
-        const { windowBackgroundColor } = await import(/* @vite-ignore */ path);
-        return windowBackgroundColor();
+        const { windowBackgroundColor, windowBackgroundHex } = await import(/* @vite-ignore */ path);
+        return { rgba: windowBackgroundColor(), hex: windowBackgroundHex() };
       }),
-    ).toEqual(palette.frame);
+    ).toEqual({
+      rgba: palette.frame,
+      hex:
+        "#" +
+        palette.frame
+          .slice(0, 3)
+          .map((n) => n.toString(16).padStart(2, "0"))
+          .join(""),
+    });
     await page.screenshot({ path: info.outputPath(`${palette.id}-settings.png`), animations: "disabled" });
     await page.keyboard.press("Escape");
     await expect(editor).toHaveCSS("background-color", palette.bg);
