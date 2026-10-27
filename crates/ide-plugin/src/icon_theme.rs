@@ -95,7 +95,18 @@ fn read_package(root: &Path, path: &Path, budget: &mut usize) -> Result<String, 
     if !real.starts_with(root) {
         return Err(format!("{}: resource outside plugin", path.display()));
     }
-    let file = std::fs::File::open(&real).map_err(|e| e.to_string())?;
+    if !real.metadata().map_err(|e| e.to_string())?.is_file() {
+        return Err("icon resource is not a file".into());
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    // A dev package may replace a regular resource with a FIFO after metadata.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+    let file = options.open(&real).map_err(|e| e.to_string())?;
     if !file.metadata().map_err(|e| e.to_string())?.is_file() {
         return Err("icon resource is not a file".into());
     }
@@ -171,11 +182,7 @@ fn validate_rules(r: &IconRules, icons: &BTreeMap<String, IconSvg>) -> Result<()
     let mut count = 0;
     for table in [&r.file_names, &r.extensions] {
         for (key, icon) in table {
-            if key.is_empty()
-                || key.len() > 256
-                || key != &key.to_ascii_lowercase()
-                || key.contains(['/', '\\', '*', '?'])
-            {
+            if key.is_empty() || key.len() > 256 || key != &key.to_lowercase() || key.contains(['/', '\\', '*', '?']) {
                 return Err("invalid file name/extension key (use lowercase literals)".into());
             }
             check(icon)?;
@@ -183,8 +190,7 @@ fn validate_rules(r: &IconRules, icons: &BTreeMap<String, IconSvg>) -> Result<()
         }
     }
     for (key, p) in &r.folder_names {
-        if key.is_empty() || key.len() > 256 || key != &key.to_ascii_lowercase() || key.contains(['/', '\\', '*', '?'])
-        {
+        if key.is_empty() || key.len() > 256 || key != &key.to_lowercase() || key.contains(['/', '\\', '*', '?']) {
             return Err("invalid folder name".into());
         }
         pair(p)?;
@@ -390,6 +396,50 @@ pub(crate) fn sanitize_svg(src: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn resource_reads_reject_fifos_without_waiting_for_a_writer() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().canonicalize().unwrap();
+        std::fs::write(root.join("file.svg"), "<svg/>").unwrap();
+        let mut budget = MAX_PACKAGE;
+        assert_eq!(read_package(&root, Path::new("file.svg"), &mut budget).unwrap(), "<svg/>");
+        assert!(std::process::Command::new("mkfifo").arg(root.join("pipe")).status().unwrap().success());
+        std::os::unix::fs::symlink("pipe", root.join("alias")).unwrap();
+        for name in ["pipe", "alias"] {
+            let (tx, rx) = std::sync::mpsc::channel();
+            let root = root.clone();
+            std::thread::spawn(move || {
+                let mut budget = MAX_PACKAGE;
+                let _ = tx.send(read_package(&root, Path::new(name), &mut budget));
+            });
+            let result = rx.recv_timeout(std::time::Duration::from_secs(2)).expect("resource open must not block");
+            assert!(result.unwrap_err().contains("not a file"));
+        }
+    }
+
+    #[test]
+    fn unicode_rule_keys_must_already_be_lowercase() {
+        let icons = BTreeMap::from([("f".into(), IconSvg { light: "<svg/>".into(), dark: None })]);
+        for table in ["fileNames", "extensions", "folderNames"] {
+            let mut rules = serde_json::json!({"file":"f", "folder":{"icon":"f"}});
+            let value = if table == "folderNames" { serde_json::json!({"icon":"f"}) } else { serde_json::json!("f") };
+            rules[table] = serde_json::json!({"é":value});
+            assert!(validate_rules(&serde_json::from_value(rules.clone()).unwrap(), &icons).is_ok());
+            rules[table] = serde_json::json!({"É":value});
+            assert!(validate_rules(&serde_json::from_value(rules).unwrap(), &icons).is_err());
+        }
+    }
+
+    #[test]
+    fn svg_depth_counts_the_root_and_allows_at_most_65_elements() {
+        for (groups, accepted) in [(64, true), (65, false)] {
+            let svg = format!("<svg>{}{}</svg>", "<g>".repeat(groups), "</g>".repeat(groups));
+            assert_eq!(sanitize_svg(&svg).is_ok(), accepted);
+        }
+    }
+
     #[test]
     fn rejects_active_and_external_content() {
         for body in [

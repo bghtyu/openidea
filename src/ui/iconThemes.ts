@@ -97,10 +97,16 @@ const attrs = new Set([
   "spreadMethod",
 ]);
 const ident = /^[a-zA-Z0-9_-]{1,64}$/;
+// Match the host's resource limits; only the selected theme crosses IPC.
+const MAX_FILE = 64 * 1024;
+const MAX_PACKAGE = 16 * 1024 * 1024;
+const encoder = new TextEncoder();
+const byteLength = (text: string) => encoder.encode(text).length;
 
 /** Defense in depth for IPC and the browser simulation. Never use the trusted built-in SVG parser. */
 function prepareSvg(src: string, variant: string): { viewBox: string; html: string } {
-  if (src.length > 65536 || /<!|<\?/.test(src)) throw new Error("Unsupported icon SVG content");
+  if (src.length > MAX_FILE || byteLength(src) > MAX_FILE || /<!|<\?/.test(src))
+    throw new Error("Unsupported icon SVG content");
   const doc = new DOMParser().parseFromString(src, "image/svg+xml");
   const root = doc.documentElement;
   if (root.tagName !== "svg" || doc.querySelector("parsererror")) throw new Error("Malformed icon SVG");
@@ -108,7 +114,11 @@ function prepareSvg(src: string, variant: string): { viewBox: string; html: stri
   if (nodes.length > 4096) throw new Error("Icon SVG too complex");
   const ids = new Set<string>();
   const refs: string[] = [];
+  const depths = new Map<Element, number>();
   for (const el of nodes) {
+    const depth = el === root ? 1 : depths.get(el.parentElement!)! + 1;
+    if (depth > 65 || el.attributes.length > 32) throw new Error("Icon SVG too complex");
+    depths.set(el, depth);
     if (!tags.has(el.tagName) || (el !== root && el.tagName === "svg")) throw new Error("Unsupported icon element");
     for (const node of el.childNodes)
       if (node.nodeType !== 1 && !(node.nodeType === 3 && !node.textContent?.trim()))
@@ -116,7 +126,8 @@ function prepareSvg(src: string, variant: string): { viewBox: string; html: stri
     for (const attr of [...el.attributes]) {
       const { name, value } = attr;
       if (name === "xmlns" && el === root && value === "http://www.w3.org/2000/svg") continue;
-      if (!attrs.has(name) || /[<>&\\:;'"\0]/.test(value)) throw new Error("Unsafe icon attribute");
+      if (!attrs.has(name) || byteLength(value) > 32768 || /[<>&\\:;'"\0]/.test(value))
+        throw new Error("Unsafe icon attribute");
       if (name === "id") {
         if (!ident.test(value) || ids.has(value)) throw new Error("Duplicate or invalid icon ID");
         ids.add(value);
@@ -146,7 +157,7 @@ function prepareSvg(src: string, variant: string): { viewBox: string; html: stri
 }
 function prepareAsset(asset: IconSvg): PreparedThemeIcon {
   const light = prepareSvg(asset.light, "l");
-  const dark = asset.dark ? prepareSvg(asset.dark, "d") : null;
+  const dark = asset.dark != null ? prepareSvg(asset.dark, "d") : null;
   const html = dark
     ? `<g class="${styles.light}">${light.html}</g><g class="${styles.dark}">${dark.html}</g>`
     : light.html;
@@ -156,7 +167,7 @@ function prepareAsset(asset: IconSvg): PreparedThemeIcon {
 /** Glob syntax is deliberately smaller than Java regex; the complete relative path must match. */
 export function pathGlob(pattern: string): { test(path: string): boolean } {
   // A bounded bitset NFA avoids regex backtracking and repeated per-character arrays.
-  if (!pattern || pattern.length > 256) throw new Error("Invalid icon path glob");
+  if (!pattern || byteLength(pattern) > 256) throw new Error("Invalid icon path glob");
   const tokens: string[] = [];
   for (const c of pattern.toLowerCase()) {
     if (c === "*" && (tokens.at(-1) === "*" || tokens.at(-1) === "**")) tokens[tokens.length - 1] = "**";
@@ -196,6 +207,36 @@ export function pathGlob(pattern: string): { test(path: string): boolean } {
 /** Atomic replacement also drops every cached asset on reload, disable and uninstall. */
 let appliedSignature = "null";
 export function applyIconTheme(theme: ActiveIconTheme | null) {
+  if (theme) {
+    const assets = Object.values(theme.theme.icons);
+    if (!assets.length || assets.length > 2048) throw new Error("Too many or missing icon assets");
+    let bytes = 0;
+    for (const asset of assets) {
+      for (const source of [asset!.light, asset!.dark]) {
+        if (source == null) continue;
+        if (source.length > MAX_FILE || byteLength(source) > MAX_FILE) throw new Error("Icon SVG too large");
+        bytes += byteLength(source);
+        if (bytes > MAX_PACKAGE) throw new Error("Icon theme exceeds size limit");
+      }
+    }
+    const rules = theme.theme.rules;
+    let count = (rules.paths ?? []).length;
+    for (const table of [rules.fileNames, rules.extensions, rules.folderNames]) {
+      const keys = Object.keys(table ?? {});
+      count += keys.length;
+      if (count > 4096) throw new Error("Too many icon rules");
+      for (const key of keys)
+        if (!key || byteLength(key) > 256 || key !== key.toLowerCase() || /[/\\*?]/.test(key))
+          throw new Error("Invalid lowercase icon rule key");
+    }
+    for (const path of rules.paths ?? [])
+      if (
+        path.pattern.startsWith("/") ||
+        /[\\:\0]/.test(path.pattern) ||
+        path.pattern.split("/").some((s) => s === "." || s === "..")
+      )
+        throw new Error("Invalid project-relative icon path glob");
+  }
   const signature = JSON.stringify(theme);
   if (signature === appliedSignature) return;
   const next = new Map<string, PreparedThemeIcon>();

@@ -4239,6 +4239,7 @@ version = "0.1.17"
 dependencies = [
  "ide-core",
  "ide-language",
+ "libc",
  "parking_lot",
  "quick-xml",
  "serde",

@@ -75,6 +75,85 @@ describe("declarative icon resolver", () => {
 });
 
 describe("dynamic SVG registry and lifecycle", () => {
+  it("matches the host depth, UTF-8, attribute and selected-payload budgets atomically", () => {
+    const single = (light: string): ActiveIconTheme => {
+      const t = theme();
+      t.theme.icons = { file: { light, dark: null } };
+      return t;
+    };
+    const nested = (groups: number) => `<svg>${"<g>".repeat(groups)}${"</g>".repeat(groups)}</svg>`;
+    applyIconTheme(single(nested(64)));
+    expect(() => applyIconTheme(single(nested(65)))).toThrow();
+    expect(() => applyIconTheme(single(`<svg>${"\u2003".repeat(22000)}</svg>`))).toThrow();
+    expect(() => applyIconTheme(single(`<svg><path d="${"0".repeat(32769)}"/></svg>`))).toThrow();
+    const names = [
+      "width",
+      "height",
+      "x",
+      "y",
+      "x1",
+      "y1",
+      "x2",
+      "y2",
+      "cx",
+      "cy",
+      "r",
+      "rx",
+      "ry",
+      "d",
+      "points",
+      "fill",
+      "stroke",
+      "stroke-width",
+      "stroke-linecap",
+      "stroke-linejoin",
+      "stroke-miterlimit",
+      "fill-rule",
+      "clip-rule",
+      "opacity",
+      "fill-opacity",
+      "stroke-opacity",
+      "transform",
+      "clip-path",
+      "gradientUnits",
+      "gradientTransform",
+      "offset",
+      "stop-color",
+      "stop-opacity",
+    ];
+    expect(() => applyIconTheme(single(`<svg ${names.map((name) => `${name}="0"`).join(" ")}/>`))).toThrow();
+    const many = single("<svg/>");
+    many.theme.icons = Object.fromEntries(
+      Array.from({ length: 2049 }, (_, i) => [`i${i}`, { light: "<svg/>", dark: null }]),
+    );
+    expect(() => applyIconTheme(many)).toThrow();
+    const large = `<svg><path d="${"0".repeat(32000)}" points="${"0".repeat(32000)}"/></svg>`;
+    many.theme.icons = Object.fromEntries(
+      Array.from({ length: 132 }, (_, i) => [`i${i}`, { light: large, dark: large }]),
+    );
+    expect(() => applyIconTheme(many)).toThrow();
+    expect(hasIcon(key("file"))).toBe(true);
+  });
+  it("bounds rules and keeps Unicode lowercase literals case-insensitive", () => {
+    const t = theme();
+    t.theme.rules.fileNames = { "é.txt": "json" };
+    t.theme.rules.extensions = { é: "compound" };
+    t.theme.rules.folderNames = { données: { icon: "open", expanded: null } };
+    applyIconTheme(t);
+    expect(fileIconName("É.TXT")).toBe(key("json"));
+    expect(fileIconName("a.É")).toBe(key("compound"));
+    expect(folderIconName("plain", { basename: "DONNÉES" })).toBe(key("open"));
+    for (const table of ["fileNames", "extensions", "folderNames"] as const) {
+      const invalid = theme();
+      Object.assign(invalid.theme.rules[table]!, {
+        É: table === "folderNames" ? { icon: "file", expanded: null } : "file",
+      });
+      expect(() => applyIconTheme(invalid)).toThrow();
+    }
+    t.theme.rules.extensions = Object.fromEntries(Array.from({ length: 4097 }, (_, i) => [`ext${i}`, "file"]));
+    expect(() => applyIconTheme(t)).toThrow();
+    expect(() => pathGlob("é".repeat(129))).toThrow();
+  });
   it("isolates fragment IDs in React, markup instances and light/dark variants", () => {
     applyIconTheme(theme());
     const { container } = render(
