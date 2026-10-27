@@ -13,7 +13,7 @@ import {
   type FileTypeAssociations,
 } from "@/platform/fileTypes";
 import { loadSettings, useProject } from "@/platform/project";
-import { fileIconName, setFileIconOverride, type IconName, type MenuItem } from "@/ui";
+import { fileIconName, setFileIconOverride, type MenuItem } from "@/ui";
 import { registerMenuGroup } from "@/workbench/contributions";
 
 let languages: LanguageInfo[] | null = null;
@@ -76,11 +76,14 @@ function overrideMenu(path: string): MenuItem[] {
   return items;
 }
 
-function iconResolver(assoc: FileTypeAssociations): ((name: string) => IconName | null) | null {
-  if (!Object.keys(assoc).length || !languages) return null;
+function iconResolver(assoc: FileTypeAssociations): Parameters<typeof setFileIconOverride>[0] {
+  if (!languages || (!Object.keys(assoc).length && !Object.keys(currentOverrides()).length)) return null;
   const byId = new Map(languages.map((l) => [l.id, l]));
-  return (name) => {
-    const id = userFileType(assoc, name);
+  const overrides = currentOverrides();
+  const root = useProject.getState().project?.root ?? null;
+  return (name, context) => {
+    const path = context?.path;
+    const id = (path && overrides[overrideKey(path, root)]) || userFileType(assoc, name);
     const lang = id ? byId.get(id) : undefined;
     const sample = lang && sampleFileName(lang);
     return sample ? fileIconName(sample) : null;

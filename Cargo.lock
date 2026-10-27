@@ -4221,6 +4221,7 @@ dependencies = [
  "ide-core",
  "ide-language",
  "parking_lot",
+ "quick-xml",
  "serde",
  "serde_json",
  "specta",

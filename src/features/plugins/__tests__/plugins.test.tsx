@@ -52,6 +52,7 @@ function plugin(partial: Partial<PluginInfo> & Pick<PluginInfo, "id">): PluginIn
     commands: [],
     languages: [],
     themes: [],
+    iconThemes: [],
     ...partial,
   };
 }
@@ -71,6 +72,7 @@ beforeEach(() => {
   usePlugins.setState({
     plugins: [],
     activeTheme: null,
+    activeIconTheme: null,
     loaded: false,
     loading: false,
     error: null,
@@ -184,7 +186,10 @@ describe("bridge events", () => {
     useThemeOverride.setState({ theme: "dark-hc" });
     applyThemeAttributes("dark-hc", root);
     expect([root.dataset.theme, root.dataset.contrast]).toEqual(["dark", "high"]);
-    applyPluginTheme({ pluginId: "p", theme: { id: "l", name: "L", kind: "light", tokens: { "--accent": "#123456" } } });
+    applyPluginTheme({
+      pluginId: "p",
+      theme: { id: "l", name: "L", kind: "light", tokens: { "--accent": "#123456" } },
+    });
     expect([root.dataset.theme, root.dataset.contrast]).toEqual(["light", undefined]);
     expect(root.dataset.pluginThemeKind).toBe("light");
     // The appearance runtime re-applying the built-in theme keeps the plugin's base.
@@ -324,3 +329,29 @@ describe("catalog helpers", () => {
     expect(enabled()).toEqual({ a: true, b: true, d: true });
   });
 });
+
+it("installs icon packages explicitly and restores defaults across disable/uninstall", async () => {
+  const { selectPluginIconTheme, uninstallPlugin } = await import("../store");
+  const { fileIconName } = await import("@/ui/icons");
+  const stop = startPluginBridge();
+  try {
+    await refreshPlugins();
+    expect(usePlugins.getState().activeIconTheme).toBeNull();
+    await backend.installDir("plugins/icon-theme-atom-material");
+    await refreshPlugins();
+    expect(fileIconName("hello.ts")).toBe("file-ts");
+    await selectPluginIconTheme("icon-theme-atom-material", "atom-material");
+    expect(fileIconName("hello.ts")).toMatch(/^icon-theme:/);
+    await selectPluginTheme("theme-solarized-dark", "solarized-dark");
+    expect(fileIconName("hello.ts")).toMatch(/^icon-theme:/);
+    await setPluginEnabled("icon-theme-atom-material", false);
+    expect(fileIconName("hello.ts")).toBe("file-ts");
+    await setPluginEnabled("icon-theme-atom-material", true);
+    expect(fileIconName("hello.ts")).toMatch(/^icon-theme:/);
+    await uninstallPlugin("icon-theme-atom-material");
+    expect(fileIconName("hello.ts")).toBe("file-ts");
+    expect(usePlugins.getState().activeTheme?.theme.id).toBe("solarized-dark");
+  } finally {
+    stop();
+  }
+}, 15000);

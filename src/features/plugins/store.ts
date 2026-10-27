@@ -1,6 +1,6 @@
 /** Installed plugins, the selected plugin theme, and the operations on them. */
 import { create } from "zustand";
-import type { ActiveTheme, CatalogPlugin, PluginInfo } from "@/bindings";
+import type { ActiveIconTheme, ActiveTheme, CatalogPlugin, PluginInfo } from "@/bindings";
 import { notifications } from "@/workbench/contributions";
 import { pluginsBackend } from "./backend";
 
@@ -9,6 +9,7 @@ export const SETTINGS_PAGE_ID = "plugins";
 interface PluginsState {
   plugins: PluginInfo[];
   activeTheme: ActiveTheme | null;
+  activeIconTheme: ActiveIconTheme | null;
   loaded: boolean;
   loading: boolean;
   error: string | null;
@@ -23,6 +24,7 @@ interface PluginsState {
 export const usePlugins = create<PluginsState>(() => ({
   plugins: [],
   activeTheme: null,
+  activeIconTheme: null,
   loaded: false,
   loading: false,
   error: null,
@@ -45,6 +47,7 @@ export async function refreshPlugins(): Promise<void> {
     usePlugins.setState({
       plugins: snapshot.plugins,
       activeTheme: snapshot.activeTheme,
+      activeIconTheme: snapshot.activeIconTheme,
       loaded: true,
       loading: false,
       error: null,
@@ -186,3 +189,19 @@ export async function runPluginCommand(pluginId: string, commandId: string, arg:
 
 /** Plugins whose contributions are live (enabled and running, or contribution-only). */
 export const isLive = (p: PluginInfo) => p.status === "active" || p.status === "static";
+
+let iconSelectionGeneration = 0;
+export async function selectPluginIconTheme(pluginId: string | null, themeId: string | null): Promise<void> {
+  const gen = ++iconSelectionGeneration;
+  try {
+    const activeIconTheme = await pluginsBackend().setIconTheme(pluginId, themeId);
+    if (gen === iconSelectionGeneration) usePlugins.setState({ activeIconTheme });
+  } catch (e) {
+    notifications().notify({
+      group: "plugins",
+      level: "error",
+      title: "Could not apply icon theme",
+      body: errorText(e),
+    });
+  }
+}

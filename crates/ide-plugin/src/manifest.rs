@@ -65,6 +65,8 @@ pub struct Contributions {
     pub languages: Vec<FileDecl>,
     #[serde(default)]
     pub themes: Vec<ThemeDecl>,
+    #[serde(default)]
+    pub icon_themes: Vec<FileDecl>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -134,7 +136,9 @@ impl PluginManifest {
             }
         }
         let theme_files = self.contributes.themes.iter().flat_map(|t| std::iter::once(&t.path).chain(&t.editor_scheme));
-        for path in self.contributes.languages.iter().map(|f| &f.path).chain(theme_files) {
+        for path in
+            self.contributes.languages.iter().chain(&self.contributes.icon_themes).map(|f| &f.path).chain(theme_files)
+        {
             check_relative(path, "contributes path")?;
         }
         Ok(())
@@ -144,6 +148,7 @@ impl PluginManifest {
     pub fn files(&self) -> Vec<&Path> {
         let mut files: Vec<&Path> = self.wasm.iter().map(PathBuf::as_path).collect();
         files.extend(self.contributes.languages.iter().map(|f| f.path.as_path()));
+        files.extend(self.contributes.icon_themes.iter().map(|f| f.path.as_path()));
         for t in &self.contributes.themes {
             files.push(t.path.as_path());
             files.extend(t.editor_scheme.as_deref());
@@ -190,8 +195,9 @@ fn api_compatible(v: &str) -> bool {
 }
 
 /// Package paths must stay inside the package directory.
-fn check_relative(path: &Path, what: &str) -> Result<(), String> {
-    let ok = !path.as_os_str().is_empty() && path.components().all(|c| matches!(c, Component::Normal(_)));
+pub(crate) fn check_relative(path: &Path, what: &str) -> Result<(), String> {
+    let portable = path.to_str().is_some_and(|s| !s.contains(['\\', ':', '\0']));
+    let ok = portable && !path.as_os_str().is_empty() && path.components().all(|c| matches!(c, Component::Normal(_)));
     if ok { Ok(()) } else { Err(format!("{what} {:?} must be a relative path inside the plugin", path.display())) }
 }
 
@@ -264,6 +270,17 @@ mod tests {
         assert!(err(&base(scheme_escape, "ok", "0.1")).contains("relative path"));
         assert!(err("id = \"ok\"\nname = \"N\"\nversion = \"1.0\"\nopenidea-api = \"0.1\"").contains("version"));
         assert!(err("id = \"ok\"\nname = \" \"\nversion = \"1.0.0\"\nopenidea-api = \"0.1\"").contains("name"));
+    }
+
+    #[test]
+    fn icon_theme_declarations_are_static_and_confined() {
+        let base = "id = \"icons\"\nname = \"Icons\"\nversion = \"1.0.0\"\nopenidea-api = \"0.1\"\n[[contributes.icon-themes]]\n";
+        let m = PluginManifest::parse(&format!("{base}path = \"icons.json\"")).unwrap();
+        assert!(m.wasm.is_none() && m.permissions.is_empty());
+        assert_eq!(m.files(), vec![Path::new("icons.json")]);
+        for path in ["../icons.json", "/icons.json", "C:/icons.json", "a\\b.json"] {
+            assert!(PluginManifest::parse(&format!("{base}path = {path:?}")).is_err(), "{path}");
+        }
     }
 
     #[test]

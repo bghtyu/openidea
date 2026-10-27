@@ -1,0 +1,193 @@
+[
+  {
+    "file": "icon_associations.xml",
+    "name": "TypeScript",
+    "expectedPattern": ".*\\.(ts|tslint)$",
+    "kind": "extensions",
+    "keys": [
+      "ts"
+    ],
+    "icon": "typescript",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Rust",
+    "expectedPattern": ".*\\.(rs|rust|rlib)$",
+    "kind": "extensions",
+    "keys": [
+      "rs"
+    ],
+    "icon": "rust",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Python",
+    "expectedPattern": ".*\\.(py|ipy|python|py[pt3iwz]|pep)$",
+    "kind": "extensions",
+    "keys": [
+      "py",
+      "pyi",
+      "pyw"
+    ],
+    "icon": "python",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Java",
+    "expectedPattern": ".*\\.(java|jar|war)$",
+    "kind": "extensions",
+    "keys": [
+      "java"
+    ],
+    "icon": "java",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "JSON",
+    "expectedPattern": ".*\\.(json|cson|jsonc|rsj|ndjson|ejson|ston)$",
+    "kind": "extensions",
+    "keys": [
+      "json",
+      "jsonc"
+    ],
+    "icon": "json",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Kotlin",
+    "expectedPattern": ".*\\.(kt|ktm|kotlin)$",
+    "kind": "extensions",
+    "keys": [
+      "kt"
+    ],
+    "icon": "kotlin",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Markdown",
+    "expectedPattern": ".*\\.(md|MD|markdown|mk?down|mkd|pmd|jmd)$",
+    "kind": "extensions",
+    "keys": [
+      "md",
+      "markdown"
+    ],
+    "icon": "markdown",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "NPM",
+    "expectedPattern": "^package\\.json$",
+    "kind": "fileNames",
+    "keys": [
+      "package.json"
+    ],
+    "icon": "npm",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Gradle KTS",
+    "expectedPattern": ".*\\.gradle\\.kts$",
+    "kind": "extensions",
+    "keys": [
+      "gradle.kts"
+    ],
+    "icon": "gradle",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "Test TypeScript",
+    "expectedPattern": ".*\\.?(test|spec)\\.ts$",
+    "kind": "extensions",
+    "keys": [
+      "test.ts",
+      "spec.ts"
+    ],
+    "icon": "test",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "icon_associations.xml",
+    "name": "GitHub",
+    "expectedPattern": ".*\\.github/.*\\.ya?ml$",
+    "kind": "paths",
+    "keys": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "icon": "workflow",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "folder_associations.xml",
+    "name": "Sources",
+    "expectedPattern": "^[\\._]?(src|sources?|code|buildSrc|snippets?)$",
+    "kind": "folderNames",
+    "keys": [
+      "src",
+      "source",
+      "sources",
+      "code"
+    ],
+    "icon": "source",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "folder_associations.xml",
+    "name": "Tests",
+    "expectedPattern": "^[\\._]?(tests?|specs?|units?|__tests?__)$",
+    "kind": "folderNames",
+    "keys": [
+      "test",
+      "tests",
+      "spec",
+      "specs",
+      "__tests__"
+    ],
+    "icon": "test",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "folder_associations.xml",
+    "name": "Resources",
+    "expectedPattern": "^[\\._]?(res|resources?|assets?|reports?)$",
+    "kind": "folderNames",
+    "keys": [
+      "res",
+      "resources",
+      "assets"
+    ],
+    "icon": "resources",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "folder_associations.xml",
+    "name": "Node Modules",
+    "expectedPattern": "^[\\._]?(node_modules|node(js)?|npm)$",
+    "kind": "folderNames",
+    "keys": [
+      "node_modules"
+    ],
+    "icon": "node",
+    "coverage": "reviewed subset"
+  },
+  {
+    "file": "folder_associations.xml",
+    "name": "GitHub",
+    "expectedPattern": "^[\\._]?github$",
+    "kind": "folderNames",
+    "keys": [
+      ".github"
+    ],
+    "icon": "github",
+    "coverage": "reviewed subset"
+  }
+]

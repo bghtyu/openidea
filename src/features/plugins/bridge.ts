@@ -3,6 +3,7 @@
  * actions, editor requests are applied to the active editor, the selected
  * theme becomes a stylesheet of CSS variables, notifications become balloons.
  */
+import { applyIconTheme } from "@/ui/iconThemes";
 import { EditorSelection } from "@codemirror/state";
 import type { ActiveTheme, PluginEvent, PluginInfo } from "@/bindings";
 import { activeEditor, useEditorRegistry } from "@/editor/api";
@@ -107,12 +108,22 @@ export function applyPluginTheme(theme: ActiveTheme | null, root: HTMLElement = 
 
 export function trackPluginTheme(): () => void {
   applyPluginTheme(usePlugins.getState().activeTheme);
+  applyIconTheme(usePlugins.getState().activeIconTheme);
   const unsubscribe = usePlugins.subscribe((s, prev) => {
     if (s.activeTheme !== prev.activeTheme) applyPluginTheme(s.activeTheme);
+    if (s.activeIconTheme !== prev.activeIconTheme) {
+      try {
+        applyIconTheme(s.activeIconTheme);
+      } catch (e) {
+        applyIconTheme(null);
+        notifications().notify({ group: "plugins", level: "error", title: "Invalid icon theme", body: String(e) });
+      }
+    }
   });
   return () => {
     unsubscribe();
     applyPluginTheme(null);
+    applyIconTheme(null);
   };
 }
 
@@ -175,6 +186,9 @@ export function handlePluginEvent(e: PluginEvent) {
       break;
     case "replaceSelection":
       applyTextToActiveEditor(e.text, true, e.pluginId);
+      break;
+    case "iconThemeChanged":
+      usePlugins.setState({ activeIconTheme: e.theme });
       break;
     case "themeChanged":
       usePlugins.setState({ activeTheme: e.theme });

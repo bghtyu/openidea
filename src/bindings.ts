@@ -664,6 +664,11 @@ export const commands = {
 	pluginId: string,
 	theme: ThemeDef,
 } | null, IdeError>(__TAURI_INVOKE("plugin_set_theme", { pluginId, themeId })),
+	/**  Select an installed declarative icon theme, independently of colour themes. */
+	pluginSetIconTheme: (pluginId: string | null, themeId: string | null) => typedError<{
+	pluginId: string,
+	theme: IconThemeDef,
+} | null, IdeError>(__TAURI_INVOKE("plugin_set_icon_theme", { pluginId, themeId })),
 	/**
 	 *  Snapshot of process memory and subsystem sizes, summed over all projects.
 	 *  Async: the process walk runs on the blocking pool, not the main thread.
@@ -809,6 +814,11 @@ export type ActionsOnSaveSettings = {
 	optimizeImports?: boolean,
 	/**  Run code cleanup (`source.fixAll`). */
 	cleanup?: boolean,
+};
+
+export type ActiveIconTheme = {
+	pluginId: string,
+	theme: IconThemeDef,
 };
 
 export type ActiveTheme = {
@@ -1075,6 +1085,7 @@ export type CatalogPlugin = {
 	commands: CommandDecl[],
 	languageCount: number,
 	themeCount: number,
+	iconThemeCount: number,
 	/**  Why the package cannot be installed as is (e.g. its WASM is not built). */
 	problem: string | null,
 };
@@ -2414,6 +2425,11 @@ export type FoldRange = {
 	kind: FoldKind,
 };
 
+export type FolderIcons = {
+	icon: string,
+	expanded?: string | null,
+};
+
 /**  Editor › General › Code Folding. */
 export type FoldingSettings = {
 	showOutline?: boolean,
@@ -2684,6 +2700,36 @@ export type HunkRange = {
 	lines: number,
 	oldStart: number,
 	oldLines: number,
+};
+
+export type IconPathRule = {
+	/**  Case-insensitive, whole project-relative path glob. `*` excludes `/`, `**` includes it. */
+	pattern: string,
+	directory?: boolean,
+	icon: string,
+	expanded?: string | null,
+};
+
+export type IconRules = {
+	file: string,
+	folder: FolderIcons,
+	fileNames?: { [key in string]: string },
+	extensions?: { [key in string]: string },
+	folderNames?: { [key in string]: FolderIcons },
+	folderRoles?: { [key in string]: FolderIcons },
+	paths?: IconPathRule[],
+};
+
+export type IconSvg = {
+	light: string,
+	dark: string | null,
+};
+
+export type IconThemeDef = {
+	id: string,
+	name: string,
+	icons: { [key in string]: IconSvg },
+	rules: IconRules,
 };
 
 /**
@@ -3580,7 +3626,12 @@ export type Permission =
 /**  Backend → UI notifications (Tauri event `ide://plugin`). */
 export type PluginEvent = 
 /**  Plugins, their status or their commands changed: re-fetch `plugin_list`. */
-{ type: "commandsChanged" } | { type: "notification"; pluginId: string; level: NotificationLevel; title: string; body: string } | { type: "insertText"; pluginId: string; text: string } | { type: "replaceSelection"; pluginId: string; text: string } | { type: "themeChanged"; theme: ActiveTheme | null };
+{ type: "commandsChanged" } | { type: "notification"; pluginId: string; level: NotificationLevel; title: string; body: string } | { type: "insertText"; pluginId: string; text: string } | { type: "replaceSelection"; pluginId: string; text: string } | { type: "themeChanged"; theme: ActiveTheme | null } | { type: "iconThemeChanged"; theme: ActiveIconTheme | null };
+
+export type PluginIconTheme = {
+	id: string,
+	name: string,
+};
 
 export type PluginInfo = {
 	id: string,
@@ -3602,6 +3653,7 @@ export type PluginInfo = {
 	commands: CommandDecl[],
 	languages: PluginLanguage[],
 	themes: PluginTheme[],
+	iconThemes: PluginIconTheme[],
 };
 
 export type PluginLanguage = {
@@ -3633,6 +3685,7 @@ export type PluginTheme = {
 export type PluginsSnapshot = {
 	plugins: PluginInfo[],
 	activeTheme: ActiveTheme | null,
+	activeIconTheme: ActiveIconTheme | null,
 };
 
 /**  A 0-based line / UTF-16 column position. */

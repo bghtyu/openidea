@@ -240,3 +240,13 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
+
+## Optional Atom Material Style icon package
+
+`plugins/icon-theme-atom-material` contains original MIT artwork by Walter Wang,
+with a curated reference to Elior "Mallowigi" Boukhobza's MIT association XML from
+[AtomMaterialUI/iconGenerator](https://github.com/AtomMaterialUI/iconGenerator/tree/3efb7279176465d18e048d6eed8b916e9c7acd89).
+Its [LICENSE](plugins/icon-theme-atom-material/LICENSE),
+[NOTICE](plugins/icon-theme-atom-material/NOTICE), and
+[per-resource provenance](plugins/icon-theme-atom-material/provenance.json) accompany
+installation. No SVG from the upstream mixed-source icon collection is shipped.

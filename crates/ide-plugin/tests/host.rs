@@ -399,3 +399,132 @@ fn catalog_lists_sample_packages() {
     let x = catalog.iter().find(|c| c.id == "x").unwrap();
     assert!(x.problem.as_deref().unwrap().contains("plugin.wasm"));
 }
+
+fn icon_package(dir: &Path, id: &str) {
+    std::fs::create_dir_all(dir.join("icons")).unwrap();
+    std::fs::write(dir.join("plugin.toml"), format!("id = {id:?}\nname = \"Icons\"\nversion = \"1.0.0\"\nopenidea-api = \"0.1\"\n[[contributes.icon-themes]]\npath = \"icons.json\"\n")).unwrap();
+    std::fs::write(dir.join("LICENSE"), "MIT - test artwork").unwrap();
+    std::fs::write(dir.join("icons/file.svg"), "<svg viewBox='0 0 16 16'><path fill='#ff0000' d='M0 0h16v16z'/></svg>")
+        .unwrap();
+    std::fs::write(dir.join("icons.json"), r#"{"id":"test","name":"Test Icons","icons":{"f":{"light":"icons/file.svg"}},"rules":{"file":"f","folder":{"icon":"f"}},"notices":["LICENSE"]}"#).unwrap();
+}
+
+#[test]
+fn icon_theme_lifecycle_is_independent_persistent_and_explicit() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    let info = f.host.install_from_dir(&package).unwrap();
+    assert_eq!(info.status, PluginStatus::Static);
+    assert!(!info.has_code && info.permissions.is_empty());
+    assert_eq!(info.icon_themes[0].id, "test");
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.plugins_dir.join("icons/icons/file.svg").is_file());
+    assert!(f.plugins_dir.join("icons/LICENSE").is_file());
+    f.host.install_from_dir(&sample("theme-solarized-dark")).unwrap();
+    f.host.set_theme(Some(("theme-solarized-dark", "solarized-dark"))).unwrap();
+    let active = f.host.set_icon_theme(Some(("icons", "test"))).unwrap().unwrap();
+    assert_eq!(f.host.list(None).active_icon_theme, Some(active.clone()));
+    assert!(f.host.active_theme().is_some());
+    let restored =
+        PluginHost::new(f.plugins_dir.clone(), Arc::new(|_: Option<&str>, _: PluginEvent| {}), Limits::default())
+            .unwrap();
+    restored.load_all();
+    assert_eq!(restored.active_icon_theme(), Some(active));
+    drop(restored);
+    f.host.set_enabled("icons", false).unwrap();
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.host.set_icon_theme(Some(("icons", "test"))).is_err());
+    assert!(f.host.active_theme().is_some());
+    f.host.set_enabled("icons", true).unwrap();
+    assert!(f.host.active_icon_theme().is_some());
+    std::fs::write(f.plugins_dir.join("icons/icons/file.svg"), "<svg><script/></svg>").unwrap();
+    assert_eq!(f.host.reload("icons").unwrap().status, PluginStatus::Failed);
+    assert!(f.host.active_icon_theme().is_none());
+    f.host.set_enabled("icons", false).unwrap();
+    f.host.set_enabled("icons", true).unwrap();
+    assert_eq!(f.status("icons"), PluginStatus::Failed);
+    f.host.uninstall("icons").unwrap();
+    let restored =
+        PluginHost::new(f.plugins_dir.clone(), Arc::new(|_: Option<&str>, _: PluginEvent| {}), Limits::default())
+            .unwrap();
+    restored.load_all();
+    assert!(restored.active_icon_theme().is_none());
+    assert!(f.take_events().iter().any(|(_, e)| matches!(e, PluginEvent::IconThemeChanged { theme: None })));
+}
+
+#[test]
+fn rejects_malformed_icon_updates_without_replacing_installed_package() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    f.host.install_from_dir(&package).unwrap();
+    f.host.set_icon_theme(Some(("icons", "test"))).unwrap();
+    let old = f.host.active_icon_theme().unwrap();
+    let original = std::fs::read_to_string(package.join("icons.json")).unwrap();
+    for invalid in [
+        original.replace("icons/file.svg", "../secret.txt"),
+        original.replace("icons/file.svg", "/etc/passwd"),
+        original.replace("icons/file.svg", "missing.svg"),
+        original.replace("icons/file.svg", "https://evil/icon.svg"),
+        original.replace("\"file\":\"f\"", "\"file\":\"missing\""),
+        original.replace("\"notices\":[\"LICENSE\"]", "\"notices\":[]"),
+    ] {
+        std::fs::write(package.join("icons.json"), invalid).unwrap();
+        assert!(f.host.install_from_dir(&package).is_err());
+        assert_eq!(f.host.active_icon_theme(), Some(old.clone()));
+    }
+    std::fs::write(package.join("icons.json"), &original).unwrap();
+    for svg in [
+        "<svg onload='evil()'/>",
+        "<svg><path fill='url(https://evil)'/></svg>",
+        "<svg><path fill='url(#missing)'/></svg>",
+    ] {
+        std::fs::write(package.join("icons/file.svg"), svg).unwrap();
+        assert!(f.host.install_from_dir(&package).is_err());
+        assert_eq!(f.host.active_icon_theme(), Some(old.clone()));
+    }
+    std::fs::write(package.join("icons/file.svg"), "x".repeat(65537)).unwrap();
+    assert!(f.host.install_from_dir(&package).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn icon_resource_symlinks_must_stay_inside_package() {
+    let f = fixture(Limits::default());
+    let package = f._tmp.path().join("icon-source");
+    icon_package(&package, "icons");
+    let outside = f._tmp.path().join("outside.svg");
+    std::fs::write(&outside, "<svg/>").unwrap();
+    std::fs::remove_file(package.join("icons/file.svg")).unwrap();
+    std::os::unix::fs::symlink(&outside, package.join("icons/file.svg")).unwrap();
+    assert!(f.host.install_from_dir(&package).unwrap_err().message.contains("outside plugin"));
+    std::fs::remove_file(package.join("icons/file.svg")).unwrap();
+    std::fs::write(package.join("inside.svg"), "<svg/>").unwrap();
+    std::os::unix::fs::symlink("../inside.svg", package.join("icons/file.svg")).unwrap();
+    assert_eq!(f.host.install_from_dir(&package).unwrap().status, PluginStatus::Static);
+    assert!(!f.plugins_dir.join("icons/icons/file.svg").is_symlink());
+}
+
+#[test]
+fn opening_project_never_selects_dev_icons() {
+    let f = fixture(Limits::default());
+    icon_package(&f.project.join(".openidea/plugins/icons"), "icons");
+    f.host.sync_project(&f.project);
+    assert_eq!(f.host.info_of("icons").unwrap().icon_themes.len(), 1);
+    assert!(f.host.active_icon_theme().is_none());
+    assert!(f.host.set_icon_theme(Some(("icons", "test"))).is_err());
+}
+
+#[test]
+fn material_style_package_installs_all_declared_assets_and_notices() {
+    let f = fixture(Limits::default());
+    let info = f.host.install_from_dir(&sample("icon-theme-atom-material")).unwrap();
+    assert_eq!(info.status, PluginStatus::Static, "{:?}", info.error);
+    let active = f.host.set_icon_theme(Some((&info.id, "atom-material"))).unwrap().unwrap();
+    assert!(active.theme.icons.len() > 50);
+    assert!(f.plugins_dir.join(&info.id).join("NOTICE").is_file());
+    assert!(f.plugins_dir.join(&info.id).join("provenance.json").is_file());
+    let catalog = scan_catalog(&[repo().join("plugins")]);
+    assert_eq!(catalog.iter().find(|p| p.id == info.id).unwrap().icon_theme_count, 1);
+}

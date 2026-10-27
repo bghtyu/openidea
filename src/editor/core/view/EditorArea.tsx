@@ -10,7 +10,7 @@ import { useShallow } from "zustand/react/shallow";
 import { executeAction } from "@/platform/actions";
 import { setContext } from "@/platform/context";
 import { useEditorPrefs } from "@/platform/editorSettings";
-import { basename, dirname } from "@/platform/project";
+import { basename, dirname, useProject } from "@/platform/project";
 import {
   getFileDecoration,
   prepareMenuGroups,
@@ -32,6 +32,7 @@ import {
   SplitPanel,
   Tabs,
   fileIconName,
+  useIconThemeGeneration,
   showContextMenu,
   type TabItem,
   type TabsDnd,
@@ -79,7 +80,11 @@ export const EDITOR_TAB_MIME = "application/x-openidea-editor-tab";
 type DropZone = SplitEdge | "center";
 
 /** Where a tab dropped at (x, y) over an editor goes: an edge (new split) or the pane itself. */
-export function dropZoneAt(x: number, y: number, rect: { left: number; top: number; width: number; height: number }): DropZone {
+export function dropZoneAt(
+  x: number,
+  y: number,
+  rect: { left: number; top: number; width: number; height: number },
+): DropZone {
   const fx = (x - rect.left) / Math.max(1, rect.width);
   const fy = (y - rect.top) / Math.max(1, rect.height);
   const edges: Array<[SplitEdge, number]> = [
@@ -106,7 +111,8 @@ function useTitleHints(): Map<string, string> {
   const paths = useTabs(
     useShallow((s) => {
       const out: string[] = [];
-      for (const p of Object.values(s.panes)) for (const t of p.tabs) if (t.input.kind === "file" && t.input.path) out.push(t.input.path);
+      for (const p of Object.values(s.panes))
+        for (const t of p.tabs) if (t.input.kind === "file" && t.input.path) out.push(t.input.path);
       return out.sort();
     }),
   );
@@ -126,8 +132,14 @@ function tabTitle(input: EditorInput, kinds: ReturnType<typeof useContributions.
   }
 }
 
+function relativeIconPath(path: string): string {
+  const root = useProject.getState().project?.root;
+  return root && path.startsWith(root + "/") ? path.slice(root.length + 1) : path;
+}
+
 function tabIcon(input: EditorInput, kinds: ReturnType<typeof useContributions.getState>["editorKinds"]): string {
-  if (input.kind === "file") return fileIconName(basename(input.path ?? ""));
+  if (input.kind === "file")
+    return fileIconName(basename(input.path ?? ""), { path: relativeIconPath(input.path ?? "") });
   if (input.kind === "virtual") return fileIconName(tabTitle(input, kinds));
   const kind = kinds.get(input.kind);
   try {
@@ -153,9 +165,12 @@ function PaneView({ paneId }: { paneId: string }) {
   const [dropZone, setDropZone] = useState<DropZone | null>(null);
   const tabPrefs = useEditorPrefs().tabs;
   const distractionFree = useDistractionFree((s) => s.active);
-  const { showExtension, markModified, showCloseButton, showFileIcon, showDirectoryForNonUnique, showFullPathOnHover } = tabPrefs;
+  const { showExtension, markModified, showCloseButton, showFileIcon, showDirectoryForNonUnique, showFullPathOnHover } =
+    tabPrefs;
 
+  const iconGeneration = useIconThemeGeneration();
   const items: TabItem[] = useMemo(() => {
+    void iconGeneration; // Theme/association changes invalidate memoized tab icons.
     const names = tabs.map((t) => tabTitle(t.input, kinds));
     return tabs.map((t, i) => {
       const full = names[i]!;
@@ -188,6 +203,7 @@ function PaneView({ paneId }: { paneId: string }) {
       };
     });
   }, [
+    iconGeneration,
     tabs,
     kinds,
     dirty,
@@ -286,7 +302,9 @@ function PaneView({ paneId }: { paneId: string }) {
         const at = { x: e.clientX, y: e.clientY };
         const path = tab.input.kind === "file" ? tab.input.path : undefined;
         if (!path) return showContextMenu(at, ctrl.tabMenu(paneId, tab));
-        void prepareMenuGroups("editorTab", { paths: [path] }).then(() => showContextMenu(at, ctrl.tabMenu(paneId, tab)));
+        void prepareMenuGroups("editorTab", { paths: [path] }).then(() =>
+          showContextMenu(at, ctrl.tabMenu(paneId, tab)),
+        );
       }}
       trailing={trailing}
     />
