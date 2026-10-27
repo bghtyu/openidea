@@ -22,6 +22,15 @@
 import { useId, useMemo, type CSSProperties } from "react";
 import clsx from "clsx";
 import styles from "./icons.module.css";
+import {
+  themeIcon,
+  resolveThemeIcon,
+  useIconThemeGeneration,
+  invalidateFileIcons,
+  type ThemeIconName,
+  type IconContext,
+} from "./iconThemes";
+export { useIconThemeGeneration } from "./iconThemes";
 
 const RAW = import.meta.glob<string>(["./expui/**/*.svg", "./openidea/**/*.svg"], {
   query: "?raw",
@@ -435,7 +444,7 @@ const SYMBOL_ICONS: Partial<Record<SymbolKind, string>> = {
   text: "fileTypes/text",
 };
 
-export type IconName = BaseName | `symbol-${SymbolKind}`;
+export type IconName = BaseName | `symbol-${SymbolKind}` | ThemeIconName;
 
 export const ICON_NAMES = Object.keys(ICONS) as BaseName[];
 
@@ -539,9 +548,10 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 16, className, style, label }: IconProps) {
+  useIconThemeGeneration();
   const uid = useId();
   const path = iconPath(name);
-  const p = (path && prepare(path, size >= 18)) || prepare(ICONS.file, size >= 18) || EMPTY;
+  const p = themeIcon(name) || (path && prepare(path, size >= 18)) || prepare(ICONS.file, size >= 18) || EMPTY;
   const html = useMemo(() => withIds(p, `i${uid.replace(/[^a-zA-Z0-9_-]/g, "")}-`), [p, uid]);
   if (!path && name.startsWith("symbol-")) {
     return <SymbolBadge kind={name.slice(7)} className={className} style={style} />;
@@ -568,7 +578,7 @@ let markupSeq = 0;
 /** SVG markup for non-React (CodeMirror DOM) callers; `null` when the name is unknown. */
 export function iconMarkup(name: string, size = 16, className?: string): string | null {
   const path = iconPath(name);
-  const p = path && prepare(path, size >= 18);
+  const p = themeIcon(name) ?? (path && prepare(path, size >= 18));
   if (!p) return null;
   const cls = clsx(styles.icon, p.mono && styles.mono, className);
   const html = withIds(p, `m${++markupSeq}-`);
@@ -592,7 +602,7 @@ export function iconMarkupOrFallback(name: string, size = 16): string {
 }
 
 export function hasIcon(name: string): boolean {
-  return iconPath(name) !== undefined || name.startsWith("symbol-");
+  return themeIcon(name) !== undefined || iconPath(name) !== undefined || name.startsWith("symbol-");
 }
 
 // ---------------------------------------------------------------------------
@@ -811,17 +821,30 @@ const EXT_ICONS = table({
 /** Source files for languages without a file-type icon. */
 const CODE_EXT = new Set(["astro", "nim", "wit", "wat", "sol", "v", "sv"]);
 
-let iconOverride: ((fileName: string) => IconName | null) | null = null;
+let iconOverride: ((fileName: string, context?: Omit<IconContext, "basename">) => IconName | null) | null = null;
 
 /** Lets the user's file type associations (Settings › File Types) pick icons first. */
-export function setFileIconOverride(resolve: ((fileName: string) => IconName | null) | null) {
+export function setFileIconOverride(
+  resolve: ((fileName: string, context?: Omit<IconContext, "basename">) => IconName | null) | null,
+) {
   iconOverride = resolve;
+  invalidateFileIcons();
 }
 
 /** Picks a file-type icon from a file name. */
-export function fileIconName(fileName: string): IconName {
-  const custom = iconOverride?.(fileName);
-  if (custom) return custom;
+let resolvingOverride = false;
+export function fileIconName(fileName: string, context: Omit<IconContext, "basename"> = {}): IconName {
+  if (!resolvingOverride && iconOverride) {
+    resolvingOverride = true;
+    try {
+      const custom = iconOverride(fileName, context);
+      if (custom) return custom;
+    } finally {
+      resolvingOverride = false;
+    }
+  }
+  const themed = resolveThemeIcon({ ...context, basename: fileName });
+  if (themed) return themed;
   const lower = fileName.toLowerCase();
   const named = FILE_NAMES[lower] ?? NAME_PATTERNS.find(([re]) => re.test(lower))?.[1];
   if (named) return named;
@@ -840,7 +863,12 @@ export type FolderKind =
   "plain" | "source" | "test" | "resources" | "testResources" | "excluded" | "library" | "github" | "module";
 
 /** Folder icon by role (expui has no separate "open" folder glyph). */
-export function folderIconName(kind: FolderKind = "plain"): IconName {
+export function folderIconName(
+  kind: FolderKind = "plain",
+  context: Omit<IconContext, "isDirectory" | "folderRole"> = { basename: "" },
+): IconName {
+  const themed = resolveThemeIcon({ ...context, isDirectory: true, folderRole: kind });
+  if (themed) return themed;
   switch (kind) {
     case "source":
       return "folder-source";

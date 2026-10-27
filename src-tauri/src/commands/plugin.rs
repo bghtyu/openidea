@@ -156,3 +156,18 @@ pub fn plugin_set_theme(
         _ => state.plugins.set_theme(None),
     }
 }
+
+/// Select an installed declarative icon theme, independently of colour themes.
+#[tauri::command]
+#[specta::specta]
+pub fn plugin_set_icon_theme(
+    state: State<'_, AppState>,
+    plugin_id: Option<String>,
+    theme_id: Option<String>,
+) -> IdeResult<Option<ide_plugin::ActiveIconTheme>> {
+    match (plugin_id.as_deref(), theme_id.as_deref()) {
+        (Some(p), Some(t)) => state.plugins.set_icon_theme(Some((p, t))),
+        (None, None) => state.plugins.set_icon_theme(None),
+        _ => Err(IdeError::invalid("both plugin and icon theme ids are required")),
+    }
+}

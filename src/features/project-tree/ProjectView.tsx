@@ -34,6 +34,7 @@ import {
   Tree,
   acquirePopup,
   fileIconName,
+  useIconThemeGeneration,
   folderIconName,
   showContextMenu,
   type TreeHandle,
@@ -92,7 +93,9 @@ export const treeHandle: { current: TreeHandle | null } = { current: null };
 export function showNewPopup(): boolean {
   const lead = treeHandle.current?.leadKey();
   const row = lead ? document.querySelector<HTMLElement>(`[data-project-key="${CSS.escape(lead)}"]`) : null;
-  const rect = (row ?? document.querySelector<HTMLElement>('[role="tree"][aria-label="Project"]'))?.getBoundingClientRect();
+  const rect = (
+    row ?? document.querySelector<HTMLElement>('[role="tree"][aria-label="Project"]')
+  )?.getBoundingClientRect();
   if (!rect) return false;
   openNewPopup({ x: rect.left + 24, y: rect.bottom }, newMenuItems(targetFolder()));
   return true;
@@ -103,12 +106,14 @@ const getLabel = (n: ProjectNode) => n.label;
 const isExpandable = (n: ProjectNode) => n.dir && !n.placeholder;
 const loadChildren = (n: ProjectNode) => loadDir(n.path);
 
-function iconFor(node: ProjectNode, roots: readonly RootFolder[], root: string | null): string {
+function iconFor(node: ProjectNode, roots: readonly RootFolder[], root: string | null, expanded = false): string {
   if (node.placeholder) return node.placeholder === "dir" ? "folder" : "file";
   if (node.icon) return node.icon;
-  if (node.root) return "module";
-  if (node.dir) return folderIconName(folderKind(node, roots, root));
-  return fileIconName(node.label);
+  const path = root && node.path.startsWith(root + "/") ? node.path.slice(root.length + 1) : node.path;
+  const context = { basename: nameOf(node.path) || node.label, path, expanded };
+  if (node.root) return folderIconName("module", context);
+  if (node.dir) return folderIconName(folderKind(node, roots, root), context);
+  return fileIconName(node.label, { path });
 }
 
 // ---------------------------------------------------------------------------
@@ -213,6 +218,7 @@ function InlineEditor({ editing, initial, onDone }: { editing: Editing; initial:
 // Rows
 
 interface RowProps {
+  expanded: boolean;
   node: ProjectNode;
   matches: number[] | null;
   editing: Editing | null;
@@ -225,6 +231,7 @@ interface RowProps {
 }
 
 const Row = memo(function Row({
+  expanded,
   node,
   matches,
   editing,
@@ -238,7 +245,8 @@ const Row = memo(function Row({
   const deco = useFileDecoration(node.path);
   const roots = useEffectiveRoots();
   const root = useProjectTree((s) => s.root);
-  const icon = iconFor(node, roots, root);
+  useIconThemeGeneration();
+  const icon = iconFor(node, roots, root, expanded);
   const isEditing =
     !!editing && (node.placeholder ? editing.kind === "new" : editing.kind === "rename" && editing.key === node.key);
   const faded = node.ignored || deco.faded;
@@ -254,7 +262,11 @@ const Row = memo(function Row({
       onClick={(e) => onClick(node, e)}
       onPointerDown={(e) => onPointerDown(node, e)}
     >
-      <Icon name={icon} size={16} className={clsx(styles.icon, node.dir && styles.folderIcon, dimIcon && styles.faded)} />
+      <Icon
+        name={icon}
+        size={16}
+        className={clsx(styles.icon, node.dir && styles.folderIcon, dimIcon && styles.faded)}
+      />
       {isEditing && editing ? (
         <InlineEditor
           editing={editing}
@@ -303,7 +315,8 @@ function folderAt(container: HTMLElement | null, x: number, y: number): { key: s
   const el = document.elementFromPoint(x, y);
   if (!el || !container.contains(el)) return null;
   const row = el.closest("[data-row]");
-  const content = (row ?? el).querySelector<HTMLElement>("[data-project-path]") ?? el.closest<HTMLElement>("[data-project-path]");
+  const content =
+    (row ?? el).querySelector<HTMLElement>("[data-project-path]") ?? el.closest<HTMLElement>("[data-project-path]");
   if (!content) return null;
   const path = content.dataset.projectPath!;
   if (content.dataset.dir) return { key: content.dataset.projectKey!, path };
@@ -403,7 +416,9 @@ export function ProjectView() {
     if (target.every((n) => n.group)) return;
     // Contributed groups may read the file first (bounded wait).
     const at = { x: e.clientX, y: e.clientY };
-    void prepareMenuGroups("projectView", menuGroupContext(target)).then(() => showContextMenu(at, contextMenuItems(target)));
+    void prepareMenuGroups("projectView", menuGroupContext(target)).then(() =>
+      showContextMenu(at, contextMenuItems(target)),
+    );
   }, []);
 
   const focusTree = useCallback(() => requestAnimationFrame(() => handle.current?.focus()), []);
@@ -569,6 +584,7 @@ export function ProjectView() {
   const renderNode = useCallback(
     (node: ProjectNode, state: TreeRowState) => (
       <Row
+        expanded={state.expanded}
         node={node}
         matches={state.matches}
         editing={editing}
@@ -598,7 +614,9 @@ export function ProjectView() {
       onBlur={() => setContext("projectViewFocus", false)}
     >
       {!model.roots.length && (
-        <div className={styles.empty}>{txTemplate(`Nothing to show in ${VIEW_MODES.find(([id]) => id === mode)?.[1] ?? "this view"}`)}</div>
+        <div className={styles.empty}>
+          {txTemplate(`Nothing to show in ${VIEW_MODES.find(([id]) => id === mode)?.[1] ?? "this view"}`)}
+        </div>
       )}
       <Tree<ProjectNode>
         aria-label="Project"

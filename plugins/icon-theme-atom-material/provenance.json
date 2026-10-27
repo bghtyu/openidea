@@ -1,0 +1,859 @@
+{
+  "upstream": {
+    "repository": "https://github.com/AtomMaterialUI/a-file-icon-idea",
+    "commit": "0f0a41f20856c83da505bee9da0e12e4ac5bfac1",
+    "generatorRepository": "https://github.com/AtomMaterialUI/iconGenerator",
+    "generatorCommit": "3efb7279176465d18e048d6eed8b916e9c7acd89"
+  },
+  "artwork": {
+    "origin": "Original OpenIDEA geometry in scripts/icons/build_atom_material.py",
+    "license": "MIT",
+    "author": "Walter Wang",
+    "borrowedSvgCount": 0
+  },
+  "translationPlanSha256": "c1523f8119b7895fff9cd417a148c316f933780124a0317ba2e6fd104675ef65",
+  "mapping": "Curated literal and glob subset; not a complete translation of Java regex or PSI type names. See docs/plugins/icon-themes.md.",
+  "excluded": "All 3026 upstream SVGs are excluded from redistribution. Per-resource provenance for mixed File-Icons/MFixx/Devicons/Octicons/MaterialDesign/FontAwesome/NounProject sources remains unverified. UI/PSI resources are outside scope.",
+  "assets": [
+    {
+      "path": "icons/archive-dark.svg",
+      "sha256": "92a89cabc0678686a04da0bcfa74c4c78a50c38d2b3ed9ef07648c2850faa249",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/archive.svg",
+      "sha256": "b83fd8b5cc77ab2559cd8ffe1eb620c86f732ed4b397d5f0318928ffa8415fb7",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/c-dark.svg",
+      "sha256": "d4f5913855864f2b59e4e4e18afd5c916eea9e6fd5fe7448b64aff42e28fc921",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/c.svg",
+      "sha256": "d40dbc08596963d6712d4f45c13f904b0838c51172218f3a0fedc787de6624a3",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/cargo-dark.svg",
+      "sha256": "2926e36df1c5cc34eb58813bed42fe494ddfb7cdad841c15b199081c95e7ebf3",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/cargo.svg",
+      "sha256": "2b44637f287c229827f853e00d94ee52c057a4074311e5d49f4737dbc8984cde",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/config-dark.svg",
+      "sha256": "4a78b6ad8b541f5e2c0be3e17d10d8b065ee9f14ee6c6add5d2a4d4d7dc5c418",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/config.svg",
+      "sha256": "b608381b950f43688ce17f1e7f669c2d97bfad520afc45905e4e7c49e6c39852",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/cpp-dark.svg",
+      "sha256": "7b88d48fd9064011701e3b7a20f52bf5c3cd2ecf1fc7fa16600509180b730e7d",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/cpp.svg",
+      "sha256": "17fa4dc4b5be46a9d12b2c05773b7986783c5173ae79c9b438a4f6261f1a7b70",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/css-dark.svg",
+      "sha256": "c2b0ab28dff760e65d637e3f76eec30306caf29eb864e1ca9d5d6ef5eea94cb5",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/css.svg",
+      "sha256": "d261d7aa4c4352f0ff0a96132a0ae526f9774c7f3d3fe56e1042b16119b4188c",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/docker-dark.svg",
+      "sha256": "81ba71769eee97836ef46f9e36c1a016ffc1924b8a53a1ce95d7b4c63686d4f5",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/docker.svg",
+      "sha256": "5dc20ca8ff8f6653f8348d7cc44e3a571273de0e02902dce93ccd05d0f779543",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-build-dark.svg",
+      "sha256": "c72da8f25be4fc75d0fc72cba46a64842ee0c3e3ea0acfade01398ad04d3bcb3",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-build-open-dark.svg",
+      "sha256": "0fe3362d99c6cf0a9f140c48e296e503e7e18d2b12421c234f84e4af643ab321",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-build-open.svg",
+      "sha256": "3e1e47127a10dee374f7333a231b9245e60c912468487bf5bf7ad939c8405ff8",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-build.svg",
+      "sha256": "7509d25c35410394b9dcef5a381cd1143563bdbdc7d626268e5efee0d88194bb",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-config-dark.svg",
+      "sha256": "02f26e541c714ac2b3c260260f3c2c53ceb80778c780493174bb97b12c4b0313",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-config-open-dark.svg",
+      "sha256": "bfe47366b9a60ba96b580881941b483a6ea5a7da5a49c542c2664776874edd11",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-config-open.svg",
+      "sha256": "d65f305604992cc366ee2e180ca45895657660a252f061cb6f78bc715cc19805",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-config.svg",
+      "sha256": "7d5786769e95741707b50cc50ab14a7496b9d34f6cdc9b838d8d2e85ba8aa9a9",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-dark.svg",
+      "sha256": "3bd529a31436d45547afc4265aa28fe5f84e2b3dacb0360b948c984281832d0a",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-docs-dark.svg",
+      "sha256": "51994645fec99b11360b42c78a3eb7919fbe0c21539db6c0aeefec8f80ed388e",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-docs-open-dark.svg",
+      "sha256": "3b0554c8b2f9648b3480618981c167b454caac35b3bd37017d8f74410bf6cf12",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-docs-open.svg",
+      "sha256": "b36ff6a644d4edb839d7c9164866563ed113e06dfebeccf211ef369f5701f01b",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-docs.svg",
+      "sha256": "e53958ad55ac76f3702be9ea25a2f00fb097c0b97d0f33709280e29ac6fa133a",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-excluded-dark.svg",
+      "sha256": "8c718da52cfd775041fe0c2b3cd9864513889d05f58418f16be26f93f5836ca8",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-excluded-open-dark.svg",
+      "sha256": "e7c6f21974e717d677eec1a412ae283af77c69cf1f54be3e132cef9ef32f1325",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-excluded-open.svg",
+      "sha256": "c5f6273834c6d727518918d000be047168353d1adf1d1dd94a6f745b4c5c9f1a",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-excluded.svg",
+      "sha256": "e4fda6d7c48468fa64c2ac9bdc570524b193f0f2bdff6df00b6a3568c9690f4a",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-github-dark.svg",
+      "sha256": "cd58b5a885fccd588240df61ec00478b6ea810fe28894b50aaa021f42618d71f",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-github-open-dark.svg",
+      "sha256": "eeab6cb51263becd783c389de39febee9ddaf103ecf87ecfa32c70038b22c040",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-github-open.svg",
+      "sha256": "cac030307578366341375a7f2da4f4852c9e44a7e25e028630f8096f419b0de0",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-github.svg",
+      "sha256": "f360b0179ceff667900c2b7b1f8d9a735d7e2b1413631ebd2aedde3d10673a04",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-library-dark.svg",
+      "sha256": "af482aa8f9225867f90fbd186c5276dd384de84f4682d426ab38f1041f91cf8d",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-library-open-dark.svg",
+      "sha256": "b0cd1eddb7147974a01e8514ab993ac4a1e629f72be360fdb665a43c9104a540",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-library-open.svg",
+      "sha256": "d7cfa5c7afdf4a143b91eacebaaa7a1319b82cceacc474d0ecec6a54239e1ab5",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-library.svg",
+      "sha256": "539ca82ec871f1f0be0ce2311829e2c789afa7ffc237b58a0802172261a92810",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-module-dark.svg",
+      "sha256": "94aac0b6af9edc5035339d0ce4b70f5fc3b7de0c95419592617429777f38f844",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-module-open-dark.svg",
+      "sha256": "4c848d8dc8f6231ea288224833b61985a62f3e04aceae54b0be59ec52d056e4f",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-module-open.svg",
+      "sha256": "d01c5e48f36cb906c3a9ccec7e36091f5151531f7b6071c438b0d6ca224b9124",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-module.svg",
+      "sha256": "311fa6ac643d5066309662b06073699640b42e11621c9d42e2ead68e81e71972",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-node-dark.svg",
+      "sha256": "0258fd39ba5d89c0abfc7507b208b55d5b39be3d41c39cc4ac821f12b4e80933",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-node-open-dark.svg",
+      "sha256": "f9c22b4815bac34f5346023bf77604ab10d7b790b0edc547bf18a533e36b7375",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-node-open.svg",
+      "sha256": "e6a7664d108d673aaa0bf80a1a36a2c1f0a8fae2bb4b0f2e25ca2cb81308e3b3",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-node.svg",
+      "sha256": "a8e7953546eaa53c802781c990031928a96c7376d76527c31113b815d5927ca6",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-open-dark.svg",
+      "sha256": "e666d25a8c2aba27c45913fae206f6e046ccb3181226269445ac3076795d3604",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-open.svg",
+      "sha256": "18740e883bc9ad5349906916bb75d0fe4cdd830f104f1cc2905990d0ce44f20a",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-resources-dark.svg",
+      "sha256": "ac816448eca333a134a94f5c5f8e2a2b1956cd9120a6ea518041e7838db4a538",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-resources-open-dark.svg",
+      "sha256": "e80dc4ce8344a54f21372cff10a1a799b3b25833fd1a6fdabeef31ed97dce1ae",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-resources-open.svg",
+      "sha256": "8ac6658d9d92e0c5325ced5ef843066af138f298faf0b88c9120493177a07263",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-resources.svg",
+      "sha256": "fc32e7a01666bafc9ccb8562bb853b175752642ef38aeff1391fad0f15cf3b79",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-source-dark.svg",
+      "sha256": "20fd3c2a124a10da56dfe0512130a9b3f484b6a20e34678f5b3349d5176ac65c",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-source-open-dark.svg",
+      "sha256": "04554d8f40eaef5fd1cac70a0c47040d83882846c58a838237d6c1c56412bd53",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-source-open.svg",
+      "sha256": "3dec4e9c815d942ef31a079c89ca4e8d98f2a02ea7a714e445dae0a9b62b4b00",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-source.svg",
+      "sha256": "a594327af6d74e80dca527865c3e8741a481456d2e71c9e8804fc1618bdc9ad5",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-test-dark.svg",
+      "sha256": "857501d9ae5630e4837ef659150a02cec514ba7da2e8e9332711732c29d5564f",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-test-open-dark.svg",
+      "sha256": "6b0fd38c527a8571efedb8d847dbdf9ccb448bfd57ab718c4ee0805a39240c44",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-test-open.svg",
+      "sha256": "2f039d0ca3549ecc8b7b59373b84b9c4551d68b8de1803247c8ee7eea6794ba1",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder-test.svg",
+      "sha256": "7eb8a3753a125164bf899581de6473d90cf7d862735a43de44be51e7beb0f975",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/folder.svg",
+      "sha256": "390bc5332fc75145f966d123e23c388141c1c0585994dd387bd7f684f7b1af40",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/git-dark.svg",
+      "sha256": "26e55618ea421e629b554d6082286f519ba18c2323df2129dc9ab367d20feda1",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/git.svg",
+      "sha256": "0fe5ac7f2d3b072331231d0492daabf2cfdc681a6ad7c4a740cdb58299e9ba3f",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/go-dark.svg",
+      "sha256": "6c401716349949dd7a0d12bc1de84a4f44cf6c045a2009a63585e24005018860",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/go.svg",
+      "sha256": "fcd293e4296d00859b356ba1fb2f85db20b886272115e19a5277545be3d10391",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/gradle-dark.svg",
+      "sha256": "6bc8792babe032802a08e73efdc6281014c747ec4af93e0c2a218dab18cd8401",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/gradle.svg",
+      "sha256": "4eaef1552f6353aa5236d8e96a26a8b218e8ec901e919b4f6097780b710dbbe2",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/html-dark.svg",
+      "sha256": "10b25ad08e8fa214a4d1c382f01ba3fb22900e207c93942566a273eafd94c0bc",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/html.svg",
+      "sha256": "3f0105aba7b7907dbfe593e7ee3114cd9a1827f5a619c4171bd78da45afda371",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/image-dark.svg",
+      "sha256": "c3687ebe72cc92a16b8b96a4d5df8e6a69d4d5f75684ff06b852e75c4289eb8d",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/image.svg",
+      "sha256": "39a2d5a21950897c4104a8b9616fe5831d1fe7ff4dd8aca75a08464e700b0741",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/java-dark.svg",
+      "sha256": "42921363a7b2ac6e48af3ded33c60a0d61382f8782ed65866ffe8a06552cda72",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/java.svg",
+      "sha256": "5b16d170a2eb65b9bf25c1b8210d36979fc7f08889acf1b90d548d646967a529",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/javascript-dark.svg",
+      "sha256": "c152da9ecd7b41ff289e39554a9fff8806a45b82f7ad11fcf79d3963601721c0",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/javascript.svg",
+      "sha256": "01bba30c4cbe557b3e86fff092d38878fe7a14fdd0a605a58c3e881ffdd10cdc",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/json-dark.svg",
+      "sha256": "9814deeff644fa38b8b43765fc6739bd718177774ee1045c8f1eba093f291099",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/json.svg",
+      "sha256": "1bce86ba76e549d539423be1e192a412fc9e836e73519123b23fb53323b6f4e9",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/kotlin-dark.svg",
+      "sha256": "97565f39c89a56d0df135a671c169b9a792c5c58c989e6c424c9d3871a767abb",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/kotlin.svg",
+      "sha256": "76e028999f4e8138fe7f5486199fd308657844931e668e3cef118500927b0b6b",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/license-dark.svg",
+      "sha256": "2a3bde46a9657c9b25f440d6655f8d3a43f41bb43c14e54e41f886a4bf75c055",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/license.svg",
+      "sha256": "c14cb1afa5f7c0b49365fbde6d13c848570d2a84545e3a8806072f6ce6bfbc92",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/lock-dark.svg",
+      "sha256": "a64d6df7ec88265ef5d53fc8fcce39f3bb4e806effd6fc5ab9292953a4bf1784",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/lock.svg",
+      "sha256": "8ae9215669b41bfd0e6e7c708e93e1e61155d315932c5adfe63355d7f375a496",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/markdown-dark.svg",
+      "sha256": "6dccfcde3b1d0b6b0630aab6d2ee26cca20e7edbb28ede0190e9eb5a162f076b",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/markdown.svg",
+      "sha256": "1eabfa523de041cf0392117ddce94ccf0dcc84b605d44c8f8697d192be657645",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/npm-dark.svg",
+      "sha256": "6b1da63679a6be2b76023ddbc67f0f6ab2b1eb5e3c74a2ecbb82503975b4bd83",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/npm.svg",
+      "sha256": "7880137e2d58f2618769bcf03e4b6c3a3d1b930166d45350d9948371e25df116",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/python-dark.svg",
+      "sha256": "8723eead884dc9c3c9856dcdec2a49353d6613b6b6b2f18b2db19a50cc6f5072",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/python.svg",
+      "sha256": "36402f7b69a953760988ec1d563ffd5d798f24c12cd012fb2e550fdcc83bffef",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/react-dark.svg",
+      "sha256": "bb962b6a8226438bc930f300239e2559d77a7853ce06934f24a7889ef1428b12",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/react.svg",
+      "sha256": "938259ba0ecc5bc205dc5f2ab59a52f32d194238891507d3696720ed0f92c3a2",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/ruby-dark.svg",
+      "sha256": "e73931862d3bc5f322e826c67107a3af6d0a209912a02bbc90559a5c87ef2d16",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/ruby.svg",
+      "sha256": "bbd017151b21d56be99a81aa3c92776cea7be3595c16e02982c99e5de61f69a9",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/rust-dark.svg",
+      "sha256": "6a460710775cff50a8e34bf2d56c884839b21aee6e180edc77f75cfd9fde0d99",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/rust.svg",
+      "sha256": "681ba954e0cb18659589e39878ccef045901279d5d5014a51235c89839a5eae7",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/shell-dark.svg",
+      "sha256": "75e76d46667d59d3f1935e45f2811266bbc9f3d87c4770e118e6d65049dfe9a9",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/shell.svg",
+      "sha256": "9ed734a3137ea96487709017e575eaf7c1420a24357975bcaefd6cb06c6be2f7",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/sql-dark.svg",
+      "sha256": "b067cfa54c51998d5fa003248d3fb4a07d2edf8c81067fac86f33145e71419b3",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/sql.svg",
+      "sha256": "f704aee9ee3c46734f4878b0a43547926884e326eb71e809a706f04ba1769814",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/svelte-dark.svg",
+      "sha256": "635eb7c95460d42687f6e583917b1cdb26fd0f42d0478dd51496ddf44c5bc8f4",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/svelte.svg",
+      "sha256": "558cd53311c3aadfecd5e17278992c4895c24280137168a2a9cfa3c5ee6ae9d8",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/swift-dark.svg",
+      "sha256": "bb833eb1615c334b53f19c124637ca5c1980dbc78fa99c7abbc7754472bb07ee",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/swift.svg",
+      "sha256": "6298f2ab7824c014a49eeb3f3ee8b0f71fa74337726d987c6e235c14bac90448",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/test-dark.svg",
+      "sha256": "d899d86d86fa2bfc0a4a60344d7a834a89cedf5ebb57bf81914ce5c95abcf81e",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/test.svg",
+      "sha256": "b8eab1ebaee03ea3552213d85082464df99f76674c5e3ceec85e57d6651d2360",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/text-dark.svg",
+      "sha256": "bfab81b63f8f6cd728dde76fa94f1a0e202b5a3df2354a60c596f21e89a46b19",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/text.svg",
+      "sha256": "f5b22cb1b830f98ea7eb49d7e23fbfce28155d114fd5a75060daa75a0483c4ad",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/toml-dark.svg",
+      "sha256": "322a618680e89675ef392e8fe1aae676ce6d708e4fd8d996f6f30a9b69ea9cfd",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/toml.svg",
+      "sha256": "175b34d920f25d734fcc340fde76e1c56ef1c7b1eaaddfa446815e3510a60bf0",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/typescript-dark.svg",
+      "sha256": "48646b0e5116168ade2c5dc2bcb4d72fe46fba213c0f6f0c5cb0df4adfe86186",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/typescript.svg",
+      "sha256": "784d7f34b5d15abf0664b5ace2e42777ec55126d3ece3f56e1146f238cdc463b",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/vue-dark.svg",
+      "sha256": "43cd4bbc4e97c468a2d4e51f573de91ab0b9fa597d486f33a1bf2d0fe502e668",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/vue.svg",
+      "sha256": "9325840ce2f33100544decf9467aa7bf8eaac57d015a08938b4600860ed48218",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/workflow-dark.svg",
+      "sha256": "3579ada93eab89abb62a9ec0df05b10d6aec88adc6585227b18980ac77ed85fd",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/workflow.svg",
+      "sha256": "a8f5a7df111dcefa0cd864991b18bef871860efc8c9f9661b4fd73796f34e20e",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/xml-dark.svg",
+      "sha256": "ec390f9e3ca2f45f997cc7ae856661e1628e02f4649a15b59c3f371c1239a618",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/xml.svg",
+      "sha256": "4a37526c66cdbdbcecea607efefe1b6ec1bf99840fb27113efc52898c3d1b8a7",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/yaml-dark.svg",
+      "sha256": "db5af4b984d3353390770db901b6239400a13e2e5f436b95d7a4a25520a71dfa",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    },
+    {
+      "path": "icons/yaml.svg",
+      "sha256": "962d36ffd7a10f90d1b1a07b9f706dd9913721766112ea5afad2b06fec9abe9e",
+      "license": "MIT",
+      "author": "Walter Wang",
+      "source": "scripts/icons/build_atom_material.py"
+    }
+  ]
+}

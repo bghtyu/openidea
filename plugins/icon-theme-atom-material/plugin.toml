@@ -1,0 +1,10 @@
+id = "icon-theme-atom-material"
+name = "Atom Material Style Icons"
+version = "1.0.0"
+description = "Flat Material style file and folder icons, light/dark variants and curated Atom Material associations. Original replacement artwork; no unverified upstream glyphs."
+authors = ["Walter Wang"]
+homepage = "https://github.com/bghtyu/openidea"
+openidea-api = "0.1"
+
+[[contributes.icon-themes]]
+path = "icons.json"

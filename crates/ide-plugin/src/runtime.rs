@@ -76,6 +76,7 @@ pub(crate) struct Registrations {
     pub commands: Vec<CommandDecl>,
     pub languages: Vec<LanguageConfig>,
     pub themes: Vec<ThemeDef>,
+    pub icon_themes: Vec<crate::IconThemeDef>,
 }
 
 impl Registrations {

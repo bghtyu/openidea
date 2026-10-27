@@ -33,6 +33,7 @@ import {
   reloadPlugin,
   runPluginCommand,
   selectPluginTheme,
+  selectPluginIconTheme,
   setAllInstalledEnabled,
   setPluginEnabled,
   uninstallPlugin,
@@ -232,6 +233,7 @@ function DetailTabs({ notes, overview }: { notes: string | null; overview: React
 function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
   const busy = usePlugins((s) => !!s.busy[plugin.id]);
   const activeTheme = usePlugins((s) => s.activeTheme);
+  const activeIconTheme = usePlugins((s) => s.activeIconTheme);
   const status = STATUS[plugin.status];
   const running = plugin.status === "active";
   const live = running || plugin.status === "static";
@@ -311,6 +313,38 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
                     aria-label={`Run ${c.title}`}
                   >
                     <T>Run</T>
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+      )}
+
+      {plugin.iconThemes.length > 0 && (
+        <Section title="Icon Themes">
+          {plugin.source === "dev" && (
+            <p className={styles.muted}>
+              <T>Install this icon package to use it across projects.</T>
+            </p>
+          )}
+          <p className={styles.muted}>
+            <T>File and folder icons. Works with any color theme.</T>
+          </p>
+          <ul className={styles.items}>
+            {plugin.iconThemes.map((t) => {
+              const selected = activeIconTheme?.pluginId === plugin.id && activeIconTheme.theme.id === t.id;
+              return (
+                <li key={t.id} className={styles.item}>
+                  <span className={styles.itemMain}>{t.name}</span>
+                  <Button
+                    size="small"
+                    variant={selected ? "secondary" : "ghost"}
+                    disabled={!selected && (!live || plugin.source !== "installed")}
+                    aria-label={selected ? "Use Default Icons" : `Apply icon theme ${t.name}`}
+                    onClick={() => void selectPluginIconTheme(selected ? null : plugin.id, selected ? null : t.id)}
+                  >
+                    <T>{selected ? "Use Default Icons" : "Apply Icons"}</T>
                   </Button>
                 </li>
               );
@@ -430,6 +464,7 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
 function CatalogDetails({ entry }: { entry: CatalogPlugin }) {
   const contributes = [
     entry.commands.length && `${entry.commands.length} ${entry.commands.length === 1 ? "command" : "commands"}`,
+    entry.iconThemeCount && `${entry.iconThemeCount} icon themes`,
     entry.themeCount && `${entry.themeCount} ${entry.themeCount === 1 ? "theme" : "themes"}`,
     entry.languageCount && `${entry.languageCount} ${entry.languageCount === 1 ? "language" : "languages"}`,
   ].filter(Boolean);

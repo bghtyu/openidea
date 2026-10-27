@@ -1,0 +1,225 @@
+[
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.ts,*.tslint",
+      "name": "TypeScript",
+      "iconColor": "1E9CEF",
+      "url": "https://www.typescriptlang.org/",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(ts|tslint)$",
+      "icon": "/icons/files/typeScript.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.rs,*.rust,*.rlib",
+      "name": "Rust",
+      "iconColor": "a72146",
+      "url": "https://www.rust-lang.org/",
+      "priority": "10",
+      "iconType": "FILE",
+      "pattern": ".*\\.(rs|rust|rlib)$",
+      "icon": "/icons/files/rust.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.py,*.python,*.ipy,*.pep,*.pyp,*.pyt,*.py3,*.pyi,*.pyw,*.pyz",
+      "name": "Python",
+      "iconColor": "FFCB6B",
+      "url": "https://www.python.org/",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(py|ipy|python|py[pt3iwz]|pep)$",
+      "icon": "/icons/files/python.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.java,*.jar,*.war",
+      "name": "Java",
+      "url": "https://docs.oracle.com/javase/8/docs/technotes/guides/language/index.html",
+      "iconColor": "C792EA",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(java|jar|war)$",
+      "icon": "/icons/files/java.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.json,*.cson,*.jsonc,*.rsj,*.rdjson,*.ejson,*.ston",
+      "name": "JSON",
+      "iconColor": "92AA5D",
+      "url": "https://www.json.org/json-en.html",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(json|cson|jsonc|rsj|ndjson|ejson|ston)$",
+      "icon": "/icons/files/json.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.kt,*.ktm,*.kotlin",
+      "name": "Kotlin",
+      "url": "https://kotlinlang.org/",
+      "iconColor": "497CE3",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(kt|ktm|kotlin)$",
+      "icon": "/icons/files/kotlin.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.md,*.markdown,*.mdown,*.mkdown,*.mkd,*.pmd,*.jmd",
+      "name": "Markdown",
+      "iconColor": "EA7130",
+      "url": "https://en.wikipedia.org/wiki/Markdown",
+      "priority": "1",
+      "iconType": "FILE",
+      "pattern": ".*\\.(md|MD|markdown|mk?down|mkd|pmd|jmd)$",
+      "icon": "/icons/files/markdown.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "package.json",
+      "name": "NPM",
+      "iconColor": "D14748",
+      "url": "https://www.npmjs.com/",
+      "priority": "100",
+      "iconType": "FILE",
+      "pattern": "^package\\.json$",
+      "icon": "/icons/files/npm.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.gradle.kts",
+      "name": "Gradle KTS",
+      "iconColor": "1976D2",
+      "url": "https://gradle.org/",
+      "priority": "100",
+      "iconType": "FILE",
+      "pattern": ".*\\.gradle\\.kts$",
+      "icon": "/icons/files/gradlekts.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": "*.test.ts,*.spec.ts",
+      "name": "Test TypeScript",
+      "iconColor": "82AAFF",
+      "priority": "100",
+      "iconPack": "TESTS",
+      "iconType": "FILE",
+      "pattern": ".*\\.?(test|spec)\\.ts$",
+      "icon": "/icons/files/testts.svg"
+    }
+  },
+  {
+    "file": "icon_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "fileNames": ".github/settings.yml,.github/workflows/quality-checks.yml",
+      "name": "GitHub",
+      "priority": "50",
+      "iconType": "FILE",
+      "pattern": ".*\\.github/.*\\.ya?ml$",
+      "iconColor": "000000",
+      "icon": "/icons/files/github.svg"
+    }
+  },
+  {
+    "file": "folder_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "folderNames": "src,source,sources,code,buildSrc,.src,_src,_source,.sources,.code,_code,.buildSrc,snippets,.snippets,.snippet",
+      "name": "Sources",
+      "folderColor": "5C6BC0",
+      "folderIconColor": "89ddff",
+      "priority": "100",
+      "iconType": "FOLDER",
+      "pattern": "^[\\._]?(src|sources?|code|buildSrc|snippets?)$",
+      "icon": "/src.svg"
+    }
+  },
+  {
+    "file": "folder_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "folderNames": "test,tests,spec,specs,unit,units,_tests,_specs,.unit,.units,.spec,__test__,__tests__",
+      "name": "Tests",
+      "folderColor": "1DE9B6",
+      "folderIconColor": "00897B",
+      "priority": "100",
+      "iconType": "FOLDER",
+      "pattern": "^[\\._]?(tests?|specs?|units?|__tests?__)$",
+      "icon": "/tests.svg"
+    }
+  },
+  {
+    "file": "folder_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "folderNames": "res,resource,resources,asset,assets,.res,_res,_resources,.assets,_assets,         report,reports,.reports,_report",
+      "name": "Resources",
+      "folderColor": "8E24AA",
+      "folderIconColor": "CE93D8",
+      "priority": "100",
+      "iconType": "FOLDER",
+      "pattern": "^[\\._]?(res|resources?|assets?|reports?)$",
+      "icon": "/resource.svg"
+    }
+  },
+  {
+    "file": "folder_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "folderNames": "node_modules,.node_modules,_node_modules,.node,.nodejs,.npm,_node,npm",
+      "name": "Node Modules",
+      "folderColor": "8bc34a",
+      "folderIconColor": "dcedc8",
+      "priority": "100",
+      "iconType": "FOLDER",
+      "pattern": "^[\\._]?(node_modules|node(js)?|npm)$",
+      "icon": "/node.svg"
+    }
+  },
+  {
+    "file": "folder_associations.xml",
+    "tag": "regex",
+    "attributes": {
+      "folderNames": "github,.github,_github",
+      "name": "GitHub",
+      "folderColor": "546e7a",
+      "folderIconColor": "eceff1",
+      "priority": "100",
+      "iconType": "FOLDER",
+      "pattern": "^[\\._]?github$",
+      "icon": "/github.svg"
+    }
+  }
+]
