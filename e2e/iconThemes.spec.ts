@@ -35,16 +35,10 @@ test("browser simulation: install/select icons, tree/tab refresh, variants and u
   await expect(src).toHaveAttribute("aria-expanded", "true");
   expect(await src.locator("svg svg").first().innerHTML()).not.toBe(closed);
   await page.screenshot({ path: info.outputPath("material-folders-and-tabs.png"), animations: "disabled" });
-  for (const label of ["Solarized Light", "Solarized Dark"]) {
-    await page.keyboard.press("Meta+,");
-    await settings.getByRole("textbox", { name: "Search settings" }).fill("Plugins");
-    await settings.getByRole("treeitem", { name: "Plugins", exact: true }).click();
-    await settings
-      .getByRole("button", { name: /^Solarized Themes/ })
-      .first()
-      .click();
-    await settings.getByRole("button", { name: `Apply theme ${label}`, exact: true }).click();
-    await page.keyboard.press("Escape");
+  for (const label of ["Solarized Light", "One Light", "Solarized Dark", "One Dark", "Islands Dark"]) {
+    await page.getByRole("button", { name: "IDE and Project Settings", exact: true }).click();
+    await page.getByText("Theme", { exact: true }).click();
+    await page.getByText(label, { exact: true }).click();
     await expect(tab.locator("svg svg")).toHaveCount(2);
     const visibleVariants = await tab.locator("svg svg").evaluateAll(
       (els) =>

@@ -40,6 +40,7 @@ import {
   usePlugins,
 } from "./store";
 import styles from "./PluginsPage.module.css";
+import { tx } from "@/platform/i18n";
 
 const STATUS: Record<PluginStatus, { label: string; tone: "success" | "accent" | "neutral" | "danger" }> = {
   active: { label: "Running", tone: "success" },
@@ -138,7 +139,7 @@ function InstalledRow({ plugin, selected, onSelect }: { plugin: PluginInfo; sele
         checked={plugin.enabled}
         disabled={busy}
         onChange={(on) => void setPluginEnabled(plugin.id, on)}
-        aria-label={`${plugin.enabled ? "Disable" : "Enable"} ${plugin.name}`}
+        aria-label={plugin.enabled ? tx`Disable ${plugin.name}` : tx`Enable ${plugin.name}`}
       />
     </li>
   );
@@ -310,7 +311,7 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
                     icon="run"
                     disabled={!running}
                     onClick={() => void runPluginCommand(plugin.id, c.id)}
-                    aria-label={`Run ${c.title}`}
+                    aria-label={tx`Run ${c.title}`}
                   >
                     <T>Run</T>
                   </Button>
@@ -372,7 +373,7 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
                       variant="ghost"
                       disabled={!live}
                       onClick={() => void selectPluginTheme(plugin.id, t.id)}
-                      aria-label={`Apply theme ${t.name}`}
+                      aria-label={tx`Apply theme ${t.name}`}
                     >
                       <T>Apply</T>
                     </Button>
@@ -441,7 +442,7 @@ function InstalledDetails({ plugin }: { plugin: PluginInfo }) {
                   variant="primary"
                   disabled={busy}
                   onClick={() => void uninstallPlugin(plugin.id)}
-                  aria-label={`Confirm uninstall ${plugin.name}`}
+                  aria-label={tx`Confirm uninstall ${plugin.name}`}
                 >
                   <T>Uninstall</T>
                 </Button>
