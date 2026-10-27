@@ -8,7 +8,10 @@
     ],
     "createUpdaterArtifacts": false,
     "resources": {
-      "../plugins/icon-theme-atom-material/": "plugins/icon-theme-atom-material/"
+      "../plugins/icon-theme-atom-material/": "plugins/icon-theme-atom-material/",
+      "../THIRD_PARTY_LICENSES.md": "THIRD_PARTY_LICENSES.md",
+      "../LICENSE": "LICENSE",
+      "../NOTICE": "NOTICE"
     },
     "macOS": {
       "signingIdentity": "-"

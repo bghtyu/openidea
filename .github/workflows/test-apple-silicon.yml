@@ -1,7 +1,7 @@
 name: Apple Silicon test DMG
 on:
   push:
-    branches: [test/upstream-main-icons-dmg-8568ff0]
+    branches: [test/upstream-main-icons-dmg-8568ff0-notices]
     paths:
       - ".github/workflows/test-apple-silicon.yml"
       - "src-tauri/**"
@@ -10,6 +10,9 @@ on:
       - "scripts/test-macos/**"
       - "plugins/**"
       - "docs/test-apple-silicon.md"
+      - "THIRD_PARTY_LICENSES.md"
+      - "LICENSE"
+      - "NOTICE"
       - "Cargo.*"
       - "package.json"
       - "pnpm-lock.yaml"

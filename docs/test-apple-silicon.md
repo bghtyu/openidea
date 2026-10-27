@@ -1,6 +1,6 @@
 # Apple Silicon test package
 
-This artifact-only build uses `test/upstream-main-icons-dmg-8568ff0`, separate
+This artifact-only build uses `test/upstream-main-icons-dmg-8568ff0-notices`, separate
 from `release.yml`. The upstream snapshot is frozen at
 `8568ff001bafcb9e1fd19916ec8c45d57a5ba981` (2026-10-27 11:15 UTC cutoff).
 It includes final built-in theme adoption PR #85 at
@@ -9,8 +9,10 @@ It includes final built-in theme adoption PR #85 at
 
 The product commit is `c50317731f18eadc1baf23e99fa55cf773a0847a` on
 `integration/upstream-main-icons` (draft PR #3). It has no test identity,
-updater override or test packaging workflow. This test commit is its direct
-child; the manifest records both commits. The previous snapshot
+updater override or test packaging workflow. This test branch descends from it;
+the manifest records both commits. The earlier test snapshot `66e7d678` is
+preserved, and this correction explicitly bundles the root notice documents.
+The previous snapshot
 `c6858fea9f753c919092783f4b6999bae1eeed7b` and its artifact remain on
 `test/upstream-main-icons-dmg`. The new branch has its own concurrency group
 and does not cancel that build. No release or tag is created.
@@ -28,6 +30,11 @@ ZIP. Install it through Settings › Plugins › Available, then choose Apply Ic
 It is not automatically installed or selected. Icons remain independent of the
 color theme. The package contains 120 original MIT SVGs, license, notice and
 per-resource provenance.
+
+The app's Resources directory also contains the complete root
+`THIRD_PARTY_LICENSES.md` (including the built-in palette MIT notices), `LICENSE`
+and `NOTICE`. Verification requires byte equality with the source checkout,
+records SHA-256 hashes, and checks equality again inside the mounted DMG.
 
 Download `openidea-test-apple-silicon-<full test SHA>` from the Actions run. It
 contains the arm64 DMG, a symlink-preserving app ZIP, offline icon-plugin ZIP,
@@ -63,7 +70,8 @@ not read or upload user projects or financial data.
 
 A successful job verifies arm64, bundle identifier, ad-hoc signature, four
 built-in selectors in built CSS, absence of duplicate theme plugins, exact icon
-resources/licenses/provenance, DMG integrity, read-only mounting, mounted binary
+resources/licenses/provenance, bundled root notices and their hashes, DMG
+integrity, read-only mounting, mounted binary
 equality and mounted resource equality. It does not launch the GUI;
 `native_gui_launched` stays false. Packaging checks do not establish native GUI
 acceptance.

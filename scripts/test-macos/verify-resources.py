@@ -17,6 +17,18 @@ PACKAGES = {
     "icon-theme-atom-material": {"atom-material"},
 }
 BUILTIN_THEMES = ("solarized-light", "solarized-dark", "one-light", "one-dark")
+NOTICES = ("THIRD_PARTY_LICENSES.md", "LICENSE", "NOTICE")
+
+
+def verify_notices(resources):
+    hashes = {}
+    for name in NOTICES:
+        source, bundled = Path(name), resources / name
+        assert bundled.is_file() and not bundled.is_symlink(), f"Missing regular notice file: {name}"
+        data = source.read_bytes()
+        assert data and data == bundled.read_bytes(), f"Bundled notice differs from source: {name}"
+        hashes[name] = hashlib.sha256(data).hexdigest()
+    return hashes
 
 
 def verify_plugins(resources):
@@ -65,6 +77,7 @@ def verify_builtin_themes():
 
 def main():
     plugins = verify_plugins(Path(sys.argv[1]))
+    notices = verify_notices(Path(sys.argv[1]))
     themes = verify_builtin_themes()
     assets = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in Path("dist").rglob("*") if p.is_file()}
     assert assets, "Missing built frontend assets"
@@ -72,6 +85,7 @@ def main():
     manifest = {
         "sha": os.environ["GITHUB_SHA"],
         "source_commits": SOURCES,
+        "supersedes_test_package": "66e7d678f5b170a014f5b363461e8fd187397e5b",
         "upstream_cutoff": "2026-10-27 11:15 UTC",
         "run_url": f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{os.environ["GITHUB_RUN_ID"]}',
         "version": base["version"],
@@ -79,10 +93,11 @@ def main():
         "identifier": "com.bghtyu.openidea.test",
         "signing": "ad-hoc, not Developer ID; not notarized",
         "verification": {"app_architecture": True, "app_signature": True, "bundled_plugin_resources": True, "built_in_theme_assets": True,
-                         "dmg_mount": False, "native_gui_launched": False},
+                         "bundled_notices": True, "mounted_notices": False, "dmg_mount": False, "native_gui_launched": False},
         "frontend_assets": assets,
         "plugin_resources": plugins,
         "built_in_themes": themes,
+        "notice_resources": notices,
     }
     Path("test-artifacts/build-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 

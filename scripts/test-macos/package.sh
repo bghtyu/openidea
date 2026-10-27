@@ -24,12 +24,16 @@ test "$(lipo -archs "$mount/OpenIDEA Test.app/Contents/MacOS/openidea")" = arm64
 cmp "$binary" "$mount/OpenIDEA Test.app/Contents/MacOS/openidea"
 codesign --verify --deep --strict "$mount/OpenIDEA Test.app"
 diff -r "$app/Contents/Resources/plugins" "$mount/OpenIDEA Test.app/Contents/Resources/plugins"
+for notice in THIRD_PARTY_LICENSES.md LICENSE NOTICE; do
+  cmp "$app/Contents/Resources/$notice" "$mount/OpenIDEA Test.app/Contents/Resources/$notice"
+done
 hdiutil detach "$mount"
 python3 - <<'PYVERIFY'
 from pathlib import Path
 import json
 p=Path('test-artifacts/build-manifest.json')
 m=json.loads(p.read_text());m['verification']['dmg_mount']=True
+m['verification']['mounted_notices']=True
 p.write_text(json.dumps(m,indent=2)+'\n')
 PYVERIFY
 # ZIP preserves the app bundle layout and symlinks across artifact download.

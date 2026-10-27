@@ -13,6 +13,9 @@ assert.deepEqual(test.plugins.updater.endpoints, []);
 assert.equal(test.plugins.updater.pubkey, "");
 assert.deepEqual(test.bundle.resources, {
   "../plugins/icon-theme-atom-material/": "plugins/icon-theme-atom-material/",
+  "../THIRD_PARTY_LICENSES.md": "THIRD_PARTY_LICENSES.md",
+  "../LICENSE": "LICENSE",
+  "../NOTICE": "NOTICE",
 });
 assert.equal(base.identifier, "ai.l0ng.openidea");
 assert.equal(base.bundle.createUpdaterArtifacts, true);
