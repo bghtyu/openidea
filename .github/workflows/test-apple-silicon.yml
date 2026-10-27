@@ -1,0 +1,73 @@
+name: Apple Silicon test DMG
+on:
+  push:
+    branches: [test/upstream-main-icons-dmg-8568ff0]
+    paths:
+      - ".github/workflows/test-apple-silicon.yml"
+      - "src-tauri/**"
+      - "src/**"
+      - "crates/**"
+      - "scripts/test-macos/**"
+      - "plugins/**"
+      - "docs/test-apple-silicon.md"
+      - "Cargo.*"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "public/**"
+      - "index.html"
+      - "vite.config.ts"
+permissions:
+  contents: read
+concurrency:
+  group: test-apple-silicon-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dmg:
+    if: github.repository == 'bghtyu/openidea'
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_RELEASE_LTO: "false"
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 16
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: 2
+      CARGO_PROFILE_RELEASE_DEBUG: 0
+      APPLE_SIGNING_IDENTITY: "-"
+      OPENIDEA_UPDATE_ENDPOINT: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@1.96.0
+        with: { targets: aarch64-apple-darwin }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: Swatinem/rust-cache@v2
+        with: { key: apple-silicon-test-no-lto }
+      - name: Verify source and isolated configuration
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(uname -m)" = arm64
+          node scripts/test-macos/validate-config.mjs
+          git merge-base --is-ancestor 8568ff001bafcb9e1fd19916ec8c45d57a5ba981 HEAD
+          git merge-base --is-ancestor 7cfe50a93d418b3fae0560ad33f49a54dd1af783 HEAD
+          git merge-base --is-ancestor c50317731f18eadc1baf23e99fa55cf773a0847a HEAD
+      - run: pnpm install --frozen-lockfile
+      - name: Build test app (ad-hoc signature only)
+        run: pnpm tauri build --ci --target aarch64-apple-darwin --bundles app --config src-tauri/tauri.test-macos.conf.json
+      - name: Verify app, create and mount DMG, record checksums
+        run: bash scripts/test-macos/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openidea-test-apple-silicon-${{ github.sha }}
+          path: test-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
