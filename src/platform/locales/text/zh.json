@@ -4708,5 +4708,7 @@
   "Proxy host is empty": "代理主机为空",
   "Invalid proxy host": "代理主机无效",
   "Proxy port must be between 1 and 65535": "代理端口必须介于 1 和 65535 之间",
-  "Proxy login is empty": "代理登录名为空"
+  "Proxy login is empty": "代理登录名为空",
+  "Add to .gitignore": "添加到 .gitignore",
+  "Add to .git/info/exclude": "添加到 .git/info/exclude"
 }
