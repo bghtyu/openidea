@@ -55,7 +55,10 @@ pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeRe
                 path.display()
             )));
         }
-        let ignored = cli::run_raw(repo.root(), &["check-ignore", "-q", "--", rel_str], None)?;
+        // check-ignore rejects --literal-pathspecs; a ./ prefix prevents pathspec
+        // magic in valid filenames such as :(top)private from being interpreted.
+        let literal_query = format!("./{rel_str}");
+        let ignored = cli::run_raw(repo.root(), &["check-ignore", "-q", "--", &literal_query], None)?;
         match ignored.code {
             Some(0) => continue,
             Some(1) => {}
@@ -112,7 +115,7 @@ pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeRe
         changed.push(file);
     }
     for (root, rel) in verify {
-        if cli::run_raw(&root, &["check-ignore", "-q", "--", &rel], None)?.code != Some(0) {
+        if cli::run_raw(&root, &["check-ignore", "-q", "--", &format!("./{rel}")], None)?.code != Some(0) {
             return Err(IdeError::invalid(format!(
                 "Rule saved, but {rel} is still visible to Git. A higher-priority .gitignore rule may override it; edit that file and retry."
             )));

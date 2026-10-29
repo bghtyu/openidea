@@ -37,7 +37,7 @@ impl Fixture {
         path
     }
     fn ignored(&self, rel: &str) {
-        assert!(!git(&self.root, &["check-ignore", "--", rel]).is_empty());
+        assert!(!git(&self.root, &["check-ignore", "--", &format!("./{rel}")]).is_empty());
         assert!(
             git(&self.root, &["--literal-pathspecs", "status", "--porcelain", "--untracked-files=all", "--", rel])
                 .is_empty()
@@ -51,9 +51,10 @@ fn shared_literals_multiselect_and_directory_are_anchored() {
     let mut names = vec!["has space", "#hash", "!bang", "[ab].txt", "-dash", "中文.txt"];
     // Win32 filenames cannot contain wildcard characters or end in a space.
     if cfg!(unix) {
-        names.extend(["has space ", "[ab]*?.txt"]);
+        names.extend(["has space ", "[ab]*?.txt", ":(top)literal", ":!literal", ":(glob)*"]);
     }
     let mut paths: Vec<_> = names.iter().map(|n| fx.file(n)).collect();
+    fx.file("literal");
     fx.file("cache/a.txt");
     fx.file("other/cache/a.txt");
     paths.push(fx.root.join("cache"));
@@ -68,6 +69,7 @@ fn shared_literals_multiselect_and_directory_are_anchored() {
     let status = git(&fx.root, &["status", "--porcelain", "--untracked-files=all"]);
     assert!(status.contains("other/cache/a.txt"));
     assert!(status.contains("other/!bang"));
+    assert!(status.lines().any(|line| line == "?? literal"));
     let text = std::fs::read_to_string(fx.root.join(".gitignore")).unwrap();
     assert!(text.contains("/cache/\n"));
     assert!(text.contains("/\\[ab\\].txt\n"));
