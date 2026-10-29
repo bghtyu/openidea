@@ -53,7 +53,21 @@ test("font picker supports manual families and CJK fallback in browser developme
   await family.fill("Maple Mono NF");
   await family.press("Enter");
   await expect(family).toHaveValue("Maple Mono NF");
+  // The shipped face is Inter Variable, not a system-installed family named Inter.
+  const interLoaded = await page.evaluate(async () => {
+    const faces = await document.fonts.load('14px "Inter Variable"');
+    return faces.some((face) => face.family.includes("Inter Variable") && face.status === "loaded");
+  });
+  expect(interLoaded).toBe(true);
+  await family.fill("Inter");
+  await family.press("Enter");
+  await expect(dialog.getByLabel("Font preview")).toHaveCSS("font-family", /^"Inter Variable",/);
   const fallback = dialog.getByRole("combobox", { name: "Fallback font", exact: true });
+  await family.fill("Maple Mono NF");
+  await family.press("Enter");
+  await fallback.fill("Inter");
+  await fallback.press("Enter");
+  await expect(dialog.getByLabel("Font preview")).toHaveCSS("font-family", /Maple Mono NF.*Inter Variable/);
   await fallback.fill("思源宋体");
   await fallback.press("Enter");
   await expect(dialog.getByLabel("Font preview")).toHaveCSS("font-family", /思源宋体/);

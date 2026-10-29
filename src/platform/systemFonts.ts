@@ -1,13 +1,14 @@
 /** Shared suggestions only: editor, UI and terminal preferences remain independent. */
 import { useEffect } from "react";
+import { BUNDLED_MONO_FAMILY, BUNDLED_UI_FAMILY } from "./fonts";
 import { create } from "zustand";
 import { isTauri } from "@tauri-apps/api/core";
 import { call, commands, type SystemFontFamily } from "@/platform/ipc";
 
 export type FontStatus = "idle" | "loading" | "ready" | "empty" | "error" | "browser";
 export const bundledFonts: SystemFontFamily[] = [
-  { name: "JetBrains Mono", monospace: true },
-  { name: "Inter", monospace: false },
+  { name: BUNDLED_MONO_FAMILY, monospace: true },
+  { name: BUNDLED_UI_FAMILY, monospace: false },
 ];
 export function mergeFontFamilies(fonts: SystemFontFamily[]): SystemFontFamily[] {
   const unique = new Map<string, SystemFontFamily>();

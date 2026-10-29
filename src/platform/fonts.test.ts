@@ -10,6 +10,10 @@ describe("monoFontFamily", () => {
     ["", "", `"JetBrains Mono Variable", "JetBrains Mono", ${BASE}`],
     [undefined, "", `"JetBrains Mono Variable", "JetBrains Mono", ${BASE}`],
     ["JetBrains Mono", "PingFang SC", `"JetBrains Mono Variable", "JetBrains Mono", "PingFang SC", ${BASE}`],
+    ["Inter", "", `"Inter Variable", "Inter", ${BASE}`],
+    ["Fira Code", "Inter", `"Fira Code", "Inter Variable", "Inter", ${BASE}`],
+    ["Inter", "JetBrains Mono", `"Inter Variable", "Inter", "JetBrains Mono Variable", "JetBrains Mono", ${BASE}`],
+    ["inter", "jetbrains mono", `"Inter Variable", "Inter", "JetBrains Mono Variable", "JetBrains Mono", ${BASE}`],
     ["Fira Code", "", `"Fira Code", ${BASE}`],
     ['"Cascadia Code"', " Microsoft YaHei ", `"Cascadia Code", "Microsoft YaHei", ${BASE}`],
   ])("%j + fallback %j", (family, fallback, expected) => {

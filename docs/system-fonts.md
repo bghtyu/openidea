@@ -31,7 +31,8 @@ not replace missing saved preferences or alter global/project scopes, standalone
 settings-window synchronization, UI opt-in, or terminal inheritance. A missing
 name is reported only after successful native enumeration; a failed refresh
 keeps previous suggestions. JetBrains Mono remains available through its bundled
-Variable face. Terminal font loading and cell fitting remain unchanged.
+Variable face, and Inter resolves to Inter Variable in every primary/fallback/UI
+selection. Terminal font loading and cell fitting remain unchanged.
 
 The interaction follows the family-service approach of IntelliJ's
 [FontFamilyCombo](https://github.com/JetBrains/intellij-community/blob/74dbd42b7a8787b0707437cb857c68e78199f611/platform/platform-impl/src/com/intellij/application/options/editor/fonts/FontFamilyCombo.java),
