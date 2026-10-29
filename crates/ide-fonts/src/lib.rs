@@ -264,7 +264,7 @@ mod tests {
         let calls = AtomicUsize::new(0);
         let lister = |refresh: bool| {
             let n = calls.fetch_add(1, Ordering::SeqCst);
-            vec![(format!("Font {n} (refresh={refresh})"), n % 2 == 0)]
+            vec![(format!("Font {n} (refresh={refresh})"), n.is_multiple_of(2))]
         };
 
         let first = cached(&cache, false, lister);
