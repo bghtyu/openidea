@@ -62,10 +62,6 @@ jobs:
           git merge-base --is-ancestor b3a6c4bd9f493fa8748be9fb4e5f22268524e8b6 HEAD
           python3 scripts/test-macos/verify-source.py
       - run: pnpm install --frozen-lockfile
-      - name: Verify test updater guard
-        run: |
-          cargo test -p openidea --lib test_package_updates -- --nocapture
-          cargo test -p openidea --lib commands::fonts::tests -- --nocapture
       - name: Build test app (ad-hoc signature only)
         run: pnpm tauri build --ci --target aarch64-apple-darwin --bundles app --config src-tauri/tauri.test-macos.conf.json
       - name: Verify app, create and mount DMG, record checksums

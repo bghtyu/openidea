@@ -15,6 +15,11 @@ quiet candidate fallback are from the unmodified PR4 product source. The only
 Rust overlay is the test-identity updater guard and its regression test.
 No PR is merged and no release or tag is created.
 
+Packaging runs build and installation-package generation only, followed by
+source/configuration, bundle, DMG and checksum checks. Behavioral tests belong
+in test CI and are not packaging prerequisites. No extra test, lint or
+typecheck suite is invoked by this workflow.
+
 ## Contents
 
 Solarized Light/Dark and One Light/Dark are built in, following upstream's
