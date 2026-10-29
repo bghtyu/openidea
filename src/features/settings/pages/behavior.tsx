@@ -4,6 +4,8 @@
  * Notifications. Every option is wired (see `appearanceRuntime`, workbench
  * theme / tool windows / notifications, app title / windows, `platform/dateFormat`).
  */
+
+import { FontPicker } from "../components/FontPicker";
 import { useId, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { shortcutLabel } from "@/platform/keymap";
@@ -174,35 +176,16 @@ function ZoomRow() {
   );
 }
 
-export const UI_FONTS = ["Inter", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Arial", "Verdana", "JetBrains Mono"];
-
 function CustomFontRow() {
   const [on, setOn] = useSetting<boolean>("appearance.useCustomFont");
   const [family, setFamily] = useSetting<string>("appearance.uiFontFamily");
   const [size, setSize] = useSetting<number>("appearance.uiFontSize");
-  const [draft, setDraft] = useState<string | null>(null);
   const id = useId();
   const matched = useLabelMatch("Use custom font");
   return (
     <div className={clsx(styles.fontRow, matched && styles.matched)}>
       <Checkbox checked={on} onChange={setOn} label={<SearchLabel text="Use custom font:" />} />
-      <Input
-        list={`${id}-fonts`}
-        className={styles.fontInput}
-        aria-label="UI font"
-        disabled={!on}
-        value={draft ?? family}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          if (e.target.value.trim()) setFamily(e.target.value.trim());
-        }}
-        onBlur={() => setDraft(null)}
-      />
-      <datalist id={`${id}-fonts`}>
-        {UI_FONTS.map((f) => (
-          <option key={f} value={f} />
-        ))}
-      </datalist>
+      <FontPicker label="UI font" disabled={!on} value={family} onChange={setFamily} />
       <label className={clsx(styles.sizeLabel, !on && styles.disabled)} htmlFor={`${id}-size`}>
         <SearchLabel text="Size:" />
       </label>

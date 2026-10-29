@@ -18,7 +18,8 @@ describe("remote invoke", () => {
   });
 
   it("routes served commands, keeps opening / closing local and sets global settings on both sides", () => {
-    const served = new Set(["fs_read_dir", "open_project", "close_project", "settings_set"]);
+    const served = new Set(["fs_read_dir", "open_project", "close_project", "settings_set", "system_fonts"]);
+    expect(remoteRouting("system_fonts", { refresh: true }, served)).toBe("local");
     expect(remoteRouting("fs_read_dir", { path: "/a" }, served)).toBe("remote");
     expect(remoteRouting("window_open_settings", {}, served)).toBe("local");
     expect(remoteRouting("open_project", { path: "/a" }, served)).toBe("local");

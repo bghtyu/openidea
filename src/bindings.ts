@@ -8,6 +8,8 @@ import { invoke as __TAURI_INVOKE, Channel } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	appInfo: () => __TAURI_INVOKE<AppInfo>("app_info"),
+	/**  Enumerates fonts on the local desktop, including in remote-development windows. */
+	systemFonts: (refresh: boolean) => typedError<SystemFontFamily[], IdeError>(__TAURI_INVOKE("system_fonts", { refresh })),
 	recentProjects: () => __TAURI_INVOKE<RecentProject[]>("recent_projects"),
 	removeRecentProject: (path: string) => typedError<null, IdeError>(__TAURI_INVOKE("remove_recent_project", { path })),
 	openProject: (path: string) => typedError<ProjectInfo_Serialize, IdeError>(__TAURI_INVOKE("open_project", { path })),
@@ -515,6 +517,8 @@ export const commands = {
 	runCloseStdin: (id: RunId) => typedError<null, IdeError>(__TAURI_INVOKE("run_close_stdin", { id })),
 	/**  Terminal size of a run started with "Emulate terminal in output console". */
 	runResize: (id: RunId, cols: number, rows: number) => typedError<null, IdeError>(__TAURI_INVOKE("run_resize", { id, cols, rows })),
+	/**  Writes the Gradle init script adding `jvm_args` to the JVMs the build forks; returns its path. */
+	runGradleJvmArgsScript: (jvmArgs: string[]) => typedError<string, IdeError>(__TAURI_INVOKE("run_gradle_jvm_args_script", { jvmArgs })),
 	/**
 	 *  Results from the JUnit XML reports (Surefire, Failsafe, Gradle) of the module at
 	 *  `module` (relative to the project root) written since `since_ms` (Unix epoch, ms).
@@ -5600,6 +5604,12 @@ export type SyntaxNode = {
 	missing: boolean,
 	/**  The node or a descendant is an error / missing node. */
 	hasError: boolean,
+};
+
+export type SystemFontFamily = {
+	name: string,
+	/**  None when faces cannot be inspected or disagree (including mixed families). */
+	monospace: boolean | null,
 };
 
 /**  A long-running background task shown in the status bar. */

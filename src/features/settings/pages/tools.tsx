@@ -3,6 +3,8 @@
  * terminal feature, the editor save participants and the run feature
  * (External Tools actions).
  */
+
+import { FontPicker } from "../components/FontPicker";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import { commands, isTauri } from "@/platform/ipc";
@@ -246,13 +248,7 @@ function TerminalFont() {
       </div>
       <Indented>
         <Row label="Font" htmlFor={familyId}>
-          <Input
-            id={familyId}
-            className={styles.medium}
-            disabled={useEditor}
-            value={family}
-            onChange={(e) => e.target.value.trim() && setFamily(e.target.value)}
-          />
+          <FontPicker id={familyId} label="Terminal font" disabled={useEditor} value={family} onChange={setFamily} />
         </Row>
         <Row label="Size">
           <NumberInput
@@ -275,13 +271,7 @@ function TerminalFont() {
         />
       </Row>
       <Row label="Fallback font" htmlFor={fallbackId} hint="Used for characters the main font lacks.">
-        <Input
-          id={fallbackId}
-          className={styles.medium}
-          value={fallback}
-          placeholder="None"
-          onChange={(e) => setFallback(e.target.value)}
-        />
+        <FontPicker id={fallbackId} label="Terminal fallback font" value={fallback} onChange={setFallback} allowEmpty />
       </Row>
       <Row label="Column width">
         <NumberInput

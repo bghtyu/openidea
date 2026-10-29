@@ -20,6 +20,7 @@ pub mod deploy;
 pub mod doc;
 pub mod docker;
 pub mod env;
+pub mod fonts;
 pub mod fs;
 pub mod github;
 pub mod history;
@@ -57,6 +58,7 @@ pub(crate) fn sender<T: tauri::ipc::IpcResponse + Send + Sync + 'static>(
 pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![
         app::app_info,
+        fonts::system_fonts,
         app::recent_projects,
         app::remove_recent_project,
         app::open_project,
@@ -266,6 +268,7 @@ pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
         run::run_list,
         run::run_close_stdin,
         run::run_resize,
+        run::run_gradle_jvm_args_script,
         run::run_test_reports,
         build::build_model,
         build::build_sync,
