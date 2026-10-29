@@ -58,6 +58,7 @@ pub(crate) fn sender<T: tauri::ipc::IpcResponse + Send + Sync + 'static>(
 pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![
         app::app_info,
+        fonts::system_fonts,
         app::recent_projects,
         app::remove_recent_project,
         app::open_project,

@@ -288,3 +288,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 ```
+
+## Native font discovery dependencies
+
+Desktop font discovery uses [font-kit 0.14.3](https://github.com/servo/font-kit),
+licensed under MIT OR Apache-2.0 (used under Apache-2.0). On Windows it also uses
+[dwrote 0.11.3](https://github.com/servo/dwrote-rs), licensed under MPL-2.0.
+These are desktop-only dependencies; they do not add font files to the bundle.
+Dependency sources and their license files remain available through the linked
+projects and Cargo package distributions.

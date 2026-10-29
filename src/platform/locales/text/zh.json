@@ -174,7 +174,7 @@
   "Build the project to see compiler messages here": "构建项目后，编译器消息将显示在这里",
   "Build, Execution, Deployment": "构建、执行、部署",
   "Building": "正在构建",
-  "Bundled": "捆绑",
+  "Bundled": "内置",
   "Caches cleared": "缓存已清除",
   "Call Hierarchy": "调用层次结构",
   "Call Tree": "调用树",
@@ -2039,7 +2039,7 @@
   "Template name": "模板名称",
   "Template text": "模板文本",
   "Terminal": "终端",
-  "Terminal fallback font": "终端备用字体",
+  "Terminal fallback font": "终端回退字体",
   "Terminal font": "终端字体",
   "Terminal font size": "终端字体大小",
   "Terminal line height": "终端行高",
@@ -4734,5 +4734,14 @@
   "Add New Interpreter…": "添加新的解释器…",
   "Interpreter Settings…": "解释器设置…",
   "Cannot select Python interpreter": "无法选择 Python 解释器",
-  "Python Interpreter: {label}": "Python 解释器：{label}"
+  "Python Interpreter: {label}": "Python 解释器：{label}",
+  "Loading system fonts…": "正在加载系统字体…",
+  "No system fonts were returned. Bundled fonts and manual input are available.": "未发现系统字体。可选择内置字体或手动输入。",
+  "This name was not found on this desktop. The saved preference is kept.": "此桌面未发现该字体，已保留保存的设置。",
+  "Type a family name or search installed fonts.": "输入字体家族名称或搜索已安装字体。",
+  "Refresh system fonts": "刷新系统字体",
+  "Monospaced": "等宽",
+  "Proportional": "非等宽",
+  "Unknown spacing": "间距未知",
+  "No matching fonts. Enter a family name manually.": "没有匹配的字体。可手动输入字体家族名称。"
 }
