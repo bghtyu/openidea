@@ -6,13 +6,13 @@ const { native, discover, detect } = vi.hoisted(() => ({
 }));
 vi.mock("./candidateFonts", () => ({ detectCandidateFonts: detect }));
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: native }));
-vi.mock("@/bindings", () => ({ commands: { systemFonts: discover } }));
+vi.mock("@/bindings", () => ({ commands: { systemFontFamilies: discover } }));
 import { bundledFonts, loadSystemFonts, useSystemFontStore } from "./systemFonts";
 
 beforeEach(() => {
   native.mockReturnValue(true);
   discover.mockReset();
-  detect.mockReset().mockReturnValue([{ name: "Menlo", monospace: true }]);
+  detect.mockReset().mockReturnValue([{ name: "Menlo", monospaced: true }]);
   useSystemFontStore.setState({ fonts: bundledFonts, status: "idle", source: "bundled" });
 });
 describe("local font discovery", () => {
@@ -30,8 +30,8 @@ describe("local font discovery", () => {
     resolve({
       status: "ok",
       data: [
-        { name: "Maple Mono NF", monospace: true },
-        { name: "maple mono nf", monospace: true },
+        { name: "Maple Mono NF", monospaced: true },
+        { name: "maple mono nf", monospaced: true },
       ],
     });
     await first;
@@ -54,7 +54,7 @@ describe("local font discovery", () => {
     await loadSystemFonts();
     expect(useSystemFontStore.getState()).toMatchObject({ status: "error", source: "limited" });
     expect(useSystemFontStore.getState().fonts.some((f) => f.name === "Menlo")).toBe(true);
-    discover.mockResolvedValue({ status: "ok", data: [{ name: "思源宋体", monospace: false }] });
+    discover.mockResolvedValue({ status: "ok", data: [{ name: "思源宋体", monospaced: false }] });
     await loadSystemFonts(true);
     expect(useSystemFontStore.getState()).toMatchObject({ status: "ready", source: "native" });
     expect(useSystemFontStore.getState().fonts.some((f) => f.name === "Menlo")).toBe(false);
@@ -69,7 +69,7 @@ describe("local font discovery", () => {
   });
 });
 
-it.each([{ fonts: [] }, { fonts: [{ name: "Outside Legacy List", monospace: true }] }])(
+it.each([{ fonts: [] }, { fonts: [{ name: "Outside Legacy List", monospaced: true }] }])(
   "retains successful native catalogs, including empty ones, after refresh failure: %j",
   async ({ fonts }) => {
     discover.mockResolvedValueOnce({ status: "ok", data: fonts });

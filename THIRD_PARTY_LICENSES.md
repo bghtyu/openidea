@@ -28,6 +28,19 @@ icon set, copied unmodified (some renamed) from JetBrains' open-source repositor
 
 At render time `src/ui/icons.tsx` may recolour monochrome icons to `currentColor`.
 
+## JetBrains IntelliJ Platform diff algorithm
+
+`src/features/vcs/comparison/**` is a TypeScript port of the text comparison of
+[intellij-community](https://github.com/JetBrains/intellij-community) (Apache-2.0):
+`platform/util/diff` (`com.intellij.util.diff`: Diff, Reindexer, MyersLCS,
+PatienceIntLCS, UniqueLCS; `com.intellij.diff.comparison`: ByLineRt, ByWordRt,
+ByCharRt, ChunkOptimizer, ChangeCorrector, LineFragmentSplitter, TrimUtil,
+ComparisonUtil, iterables) and `platform/diff-impl` (ComparisonManagerImpl's
+`compareLinesInner` and `processBlocks`). `__tests__/ideaCases.json` is converted
+from its tests (`LineComparisonUtilTest`, `WordComparisonUtilTest`,
+`SplitComparisonUtilTest`). Modified from the originals. Copyright 2000-2026
+JetBrains s.r.o. and contributors. Apache License 2.0 (below).
+
 `src/ui/openidea/**` holds OpenIDEA's own file-type icons drawn in the expui style for
 languages whose JetBrains icons are not open source (Go, Rust, Ruby, Dart, Lua, Zig,
 Svelte, …). Those using the page-with-corner-badge layout (`goMod`, `goWork`,
@@ -288,12 +301,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 ```
-
-## Native font discovery dependencies
-
-Desktop font discovery uses [font-kit 0.14.3](https://github.com/servo/font-kit),
-licensed under MIT OR Apache-2.0 (used under Apache-2.0). On Windows it also uses
-[dwrote 0.11.3](https://github.com/servo/dwrote-rs), licensed under MPL-2.0.
-These are desktop-only dependencies; they do not add font files to the bundle.
-Dependency sources and their license files remain available through the linked
-projects and Cargo package distributions.

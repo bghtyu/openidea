@@ -2,7 +2,7 @@
  * Bounded legacy fallback, never the primary desktop catalog. Width comparisons
  * can miss installed families and are only hints; they say nothing about coverage.
  */
-import type { SystemFontFamily } from "@/bindings";
+import type { FontFamily } from "@/bindings";
 import { monoFontFamily } from "./fonts";
 
 // Keep the former editor's 31 candidates for recovery, not as an installed-font whitelist.
@@ -40,7 +40,7 @@ const CANDIDATES = [
   "Georgia",
 ];
 
-export function detectCandidateFonts(): SystemFontFamily[] {
+export function detectCandidateFonts(): FontFamily[] {
   try {
     if (typeof document === "undefined") return [];
     const ctx = document.createElement("canvas").getContext("2d");
@@ -50,7 +50,7 @@ export function detectCandidateFonts(): SystemFontFamily[] {
       return ctx.measureText(text).width;
     };
     const sample = "mmmmmmmmmmlli1WQ@";
-    const out: SystemFontFamily[] = [];
+    const out: FontFamily[] = [];
     for (const name of CANDIDATES) {
       const present = ["monospace", "serif", "sans-serif"].some((base) => {
         const measured = width(monoFontFamily(name, "", base), sample);
@@ -62,7 +62,7 @@ export function detectCandidateFonts(): SystemFontFamily[] {
       const wide = width(monoFontFamily(name, "", "monospace"), "WWWWWWWWWW");
       out.push({
         name,
-        monospace: Number.isFinite(narrow) && Number.isFinite(wide) ? Math.abs(narrow - wide) < 0.5 : null,
+        monospaced: Number.isFinite(narrow) && Number.isFinite(wide) && Math.abs(narrow - wide) < 0.5,
       });
     }
     return out;

@@ -13,8 +13,8 @@ it("probes the legacy list and classifies measured mono and proportional familie
   };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
   expect(detectCandidateFonts()).toEqual([
-    { name: "Menlo", monospace: true },
-    { name: "Georgia", monospace: false },
+    { name: "Menlo", monospaced: true },
+    { name: "Georgia", monospaced: false },
   ]);
 });
 it("returns no inferred families when Canvas is absent", () => {

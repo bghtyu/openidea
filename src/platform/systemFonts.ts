@@ -4,22 +4,22 @@ import { detectCandidateFonts } from "./candidateFonts";
 import { BUNDLED_MONO_FAMILY, BUNDLED_UI_FAMILY } from "./fonts";
 import { create } from "zustand";
 import { isTauri } from "@tauri-apps/api/core";
-import { call, commands, type SystemFontFamily } from "@/platform/ipc";
+import { call, commands, type FontFamily } from "@/platform/ipc";
 
 export type FontStatus = "idle" | "loading" | "ready" | "empty" | "error" | "browser";
-export const bundledFonts: SystemFontFamily[] = [
-  { name: BUNDLED_MONO_FAMILY, monospace: true },
-  { name: BUNDLED_UI_FAMILY, monospace: false },
+export const bundledFonts: FontFamily[] = [
+  { name: BUNDLED_MONO_FAMILY, monospaced: true },
+  { name: BUNDLED_UI_FAMILY, monospaced: false },
 ];
-export function mergeFontFamilies(fonts: SystemFontFamily[]): SystemFontFamily[] {
-  const unique = new Map<string, SystemFontFamily>();
+export function mergeFontFamilies(fonts: FontFamily[]): FontFamily[] {
+  const unique = new Map<string, FontFamily>();
   for (const font of [...fonts, ...bundledFonts]) {
     if (font.name.trim()) unique.set(font.name.toLocaleLowerCase(), font);
   }
   return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 export type FontSource = "bundled" | "limited" | "native";
-export const useSystemFontStore = create<{ fonts: SystemFontFamily[]; status: FontStatus; source: FontSource }>(() => ({
+export const useSystemFontStore = create<{ fonts: FontFamily[]; status: FontStatus; source: FontSource }>(() => ({
   fonts: bundledFonts,
   status: "idle",
   source: "bundled",
@@ -32,7 +32,7 @@ function fallback(status: "error" | "browser") {
     useSystemFontStore.setState({ status });
     return;
   }
-  let candidates: SystemFontFamily[] = [];
+  let candidates: FontFamily[] = [];
   try {
     candidates = detectCandidateFonts();
   } catch {
@@ -49,7 +49,7 @@ export function loadSystemFonts(refresh = false): Promise<void> {
   }
   useSystemFontStore.setState({ status: "loading" });
   pending = Promise.resolve()
-    .then(() => call(commands.systemFonts(refresh)))
+    .then(() => call(commands.systemFontFamilies(refresh)))
     .then((fonts) =>
       useSystemFontStore.setState({
         fonts: mergeFontFamilies(fonts),

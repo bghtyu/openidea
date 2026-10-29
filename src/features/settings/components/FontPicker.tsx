@@ -31,9 +31,7 @@ export function FontPicker({
   const [active, setActive] = useState(-1);
   const text = draft?.source === value ? draft.text : value;
   const query = draft?.source === value ? text.trim().toLocaleLowerCase() : "";
-  const suggestions = fonts.filter(
-    (f) => (!monoOnly || f.monospace === true) && f.name.toLocaleLowerCase().includes(query),
-  );
+  const suggestions = fonts.filter((f) => (!monoOnly || f.monospaced) && f.name.toLocaleLowerCase().includes(query));
   const known = fonts.some((f) => f.name.toLocaleLowerCase() === value.trim().toLocaleLowerCase());
   const message =
     status === "loading"
@@ -144,11 +142,9 @@ export function FontPicker({
                 {tx(
                   font.name === "JetBrains Mono" || font.name === "Inter"
                     ? "Bundled"
-                    : font.monospace === true
+                    : font.monospaced
                       ? "Monospaced"
-                      : font.monospace === false
-                        ? "Proportional"
-                        : "Unknown spacing",
+                      : "Proportional",
                 )}
               </span>
             </div>

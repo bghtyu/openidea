@@ -8,8 +8,6 @@ import { invoke as __TAURI_INVOKE, Channel } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	appInfo: () => __TAURI_INVOKE<AppInfo>("app_info"),
-	/**  Enumerates fonts on the local desktop, including in remote-development windows. */
-	systemFonts: (refresh: boolean) => typedError<SystemFontFamily[], IdeError>(__TAURI_INVOKE("system_fonts", { refresh })),
 	recentProjects: () => __TAURI_INVOKE<RecentProject[]>("recent_projects"),
 	removeRecentProject: (path: string) => typedError<null, IdeError>(__TAURI_INVOKE("remove_recent_project", { path })),
 	openProject: (path: string) => typedError<ProjectInfo_Serialize, IdeError>(__TAURI_INVOKE("open_project", { path })),
@@ -155,10 +153,10 @@ export const commands = {
 	 */
 	clipboardSetFileList: (paths: string[]) => typedError<boolean, IdeError>(__TAURI_INVOKE("clipboard_set_file_list", { paths })),
 	/**
-	 *  Compatibility endpoint for callers using the original family-only command.
-	 *  Shares the refresh-aware catalog used by the editable settings pickers.
+	 *  Every installed family, sorted, each flagged monospaced or not. Read on
+	 *  first use (off the command threads), cached, and re-queried on `refresh`.
 	 */
-	systemFontFamilies: () => typedError<FontFamily[], IdeError>(__TAURI_INVOKE("system_font_families")),
+	systemFontFamilies: (refresh: boolean) => typedError<FontFamily[], IdeError>(__TAURI_INVOKE("system_font_families", { refresh })),
 	/**
 	 *  Opens a document. Async: reading and decoding a large file must not block
 	 *  the main thread (synchronous commands run on it).
@@ -406,6 +404,7 @@ export const commands = {
 	vcsBranches: (repo: string | null) => typedError<Branch[], IdeError>(__TAURI_INVOKE("vcs_branches", { repo })),
 	vcsStashes: (repo: string | null) => typedError<Stash[], IdeError>(__TAURI_INVOKE("vcs_stashes", { repo })),
 	vcsStage: (paths: string[]) => typedError<null, IdeError>(__TAURI_INVOKE("vcs_stage", { paths })),
+	vcsAddToIgnore: (paths: string[], destination: IgnoreDestination) => typedError<null, IdeError>(__TAURI_INVOKE("vcs_add_to_ignore", { paths, destination })),
 	vcsUnstage: (paths: string[]) => typedError<null, IdeError>(__TAURI_INVOKE("vcs_unstage", { paths })),
 	vcsStagePatch: (patch: string) => typedError<null, IdeError>(__TAURI_INVOKE("vcs_stage_patch", { patch })),
 	vcsDiscard: (paths: string[]) => typedError<null, IdeError>(__TAURI_INVOKE("vcs_discard", { paths })),
@@ -3340,6 +3339,8 @@ export type IdentifierOccurrence = {
 	qualified: boolean,
 };
 
+export type IgnoreDestination = "gitignore" | "localExclude";
+
 export type IndentConfig = IndentConfig_Serialize | IndentConfig_Deserialize;
 
 export type IndentConfig_Deserialize = {
@@ -5632,12 +5633,6 @@ export type SyntaxNode = {
 	missing: boolean,
 	/**  The node or a descendant is an error / missing node. */
 	hasError: boolean,
-};
-
-export type SystemFontFamily = {
-	name: string,
-	/**  None when faces cannot be inspected or disagree (including mixed families). */
-	monospace: boolean | null,
 };
 
 /**  A long-running background task shown in the status bar. */

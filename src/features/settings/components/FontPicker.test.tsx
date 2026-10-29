@@ -8,7 +8,7 @@ beforeEach(() =>
   useSystemFontStore.setState({
     status: "ready",
     source: "native",
-    fonts: [...bundledFonts, { name: "Maple Mono NF", monospace: true }, { name: "思源宋体", monospace: false }],
+    fonts: [...bundledFonts, { name: "Maple Mono NF", monospaced: true }, { name: "思源宋体", monospaced: false }],
   }),
 );
 function Harness({ monoOnly = false, initial = "Saved Missing Font" }) {
@@ -78,7 +78,7 @@ it("quietly keeps selections and manual input through fallback and native retry"
     useSystemFontStore.setState({
       status: "ready",
       source: "native",
-      fonts: [...bundledFonts, { name: "New Native Family", monospace: false }],
+      fonts: [...bundledFonts, { name: "New Native Family", monospaced: false }],
     }),
   );
   expect(input).toHaveValue("Manual CJK Family");

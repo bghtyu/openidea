@@ -58,7 +58,6 @@ pub(crate) fn sender<T: tauri::ipc::IpcResponse + Send + Sync + 'static>(
 pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![
         app::app_info,
-        fonts::system_fonts,
         app::recent_projects,
         app::remove_recent_project,
         app::open_project,
@@ -202,6 +201,7 @@ pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
         vcs::vcs_branches,
         vcs::vcs_stashes,
         vcs::vcs_stage,
+        vcs::vcs_add_to_ignore,
         vcs::vcs_unstage,
         vcs::vcs_stage_patch,
         vcs::vcs_discard,
