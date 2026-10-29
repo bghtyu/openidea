@@ -4499,6 +4499,7 @@ dependencies = [
  "dunce",
  "gix",
  "ide-core",
+ "ignore",
  "libc",
  "regex-lite",
  "serde",

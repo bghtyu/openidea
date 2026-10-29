@@ -3,7 +3,7 @@ use crate::{Repo, cli};
 use ide_core::{IdeError, IdeResult};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -15,13 +15,21 @@ pub enum IgnoreDestination {
     LocalExclude,
 }
 
+struct IgnoreRule {
+    pattern: String,
+    relative: PathBuf,
+    directory: bool,
+}
+
 /// Validate the whole selection before writing. Each destination is replaced atomically;
 /// a failure in a later repository may leave earlier destinations updated (safe to retry).
 /// Never modifies the index or a selected file.
 pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeResult<Vec<PathBuf>> {
-    let mut edits: BTreeMap<PathBuf, Vec<String>> = BTreeMap::new();
+    let mut edits: BTreeMap<PathBuf, Vec<IgnoreRule>> = BTreeMap::new();
     let mut verify = Vec::new();
     for path in paths {
+        // Validate before filesystem access: APFS cannot even stat invalid UTF-8 names.
+        path.to_str().ok_or_else(|| IdeError::invalid("Path is not UTF-8"))?;
         if !path.is_absolute() || path.components().any(|c| matches!(c, Component::ParentDir)) {
             return Err(IdeError::invalid("Select an absolute path without '..'"));
         }
@@ -54,7 +62,7 @@ pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeRe
             _ => return Err(IdeError::invalid(ignored.stdout_str() + &String::from_utf8_lossy(&ignored.stderr))),
         }
         verify.push((repo.root().to_path_buf(), rel_str.to_owned()));
-        let (file, rule) = match destination {
+        let (file, rule, base) = match destination {
             IgnoreDestination::LocalExclude => {
                 let output = cli::run(
                     repo.root(),
@@ -70,7 +78,7 @@ pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeRe
                 if file != common.join("info/exclude") {
                     return Err(IdeError::invalid("Git returned an unexpected exclude path"));
                 }
-                (file, literal)
+                (file, literal, repo.root())
             }
             IgnoreDestination::Gitignore => {
                 let base = start
@@ -78,12 +86,16 @@ pub fn add_to_ignore(paths: &[PathBuf], destination: IgnoreDestination) -> IdeRe
                     .take_while(|p| p.starts_with(repo.root()))
                     .find(|p| p.join(".gitignore").symlink_metadata().is_ok())
                     .unwrap_or(repo.root());
-                (base.join(".gitignore"), pattern(path.strip_prefix(base).unwrap(), meta.is_dir())?)
+                (base.join(".gitignore"), pattern(path.strip_prefix(base).unwrap(), meta.is_dir())?, base)
             }
         };
         no_symlinks(file.parent().unwrap())?;
         validate_file(&file)?;
-        edits.entry(file).or_default().push(rule);
+        edits.entry(file).or_default().push(IgnoreRule {
+            pattern: rule,
+            relative: path.strip_prefix(base).unwrap().to_path_buf(),
+            directory: meta.is_dir(),
+        });
     }
     let mut changed = Vec::new();
     for (file, rules) in edits {
@@ -204,7 +216,7 @@ fn snapshot(file: &Path) -> IdeResult<Option<Snapshot>> {
     }
 }
 
-fn append(file: &Path, rules: &[String]) -> IdeResult<()> {
+fn append(file: &Path, rules: &[IgnoreRule]) -> IdeResult<()> {
     no_symlinks(file.parent().unwrap())?;
     fs::create_dir_all(file.parent().unwrap())?;
     // Conventional sibling lock: create_new never follows a preexisting symlink.
@@ -225,19 +237,28 @@ fn append(file: &Path, rules: &[String]) -> IdeResult<()> {
         return Err(IdeError::invalid("Ignore file contains NUL; edit it manually"));
     }
     let newline = if text.contains("\r\n") { "\r\n" } else { "\n" };
+    // Identical text earlier in the file may have been overridden by a later
+    // negation. Deduplicate only rules that this file still applies to the path.
+    let mut builder = ignore::gitignore::GitignoreBuilder::new("");
+    for (index, line) in text.lines().enumerate() {
+        let line = if index == 0 { line.trim_start_matches('\u{feff}') } else { line };
+        if let Err(error) = builder.add_line(None, line) {
+            tracing::debug!("{}: {error}", file.display());
+        }
+    }
+    let existing = builder.build().map_err(|e| IdeError::invalid(format!("Cannot parse ignore rules: {e}")))?;
+    let mut requested = HashSet::new();
     let mut updated = bytes.to_vec();
     for rule in rules {
-        if text.lines().any(|line| line == rule)
-            || updated[bytes.len()..]
-                .split(|b| *b == b'\n')
-                .any(|line| line.strip_suffix(b"\r").unwrap_or(line) == rule.as_bytes())
+        if !requested.insert(rule.pattern.as_str())
+            || existing.matched_path_or_any_parents(&rule.relative, rule.directory).is_ignore()
         {
             continue;
         }
         if !updated.is_empty() && !updated.ends_with(b"\n") {
             updated.extend_from_slice(newline.as_bytes());
         }
-        updated.extend_from_slice(rule.as_bytes());
+        updated.extend_from_slice(rule.pattern.as_bytes());
         updated.extend_from_slice(newline.as_bytes());
     }
     if updated == bytes {
@@ -281,10 +302,11 @@ mod tests {
     #[test]
     fn concurrent_writer_is_detected_without_overwriting_it() {
         let tmp = tempfile::tempdir().unwrap();
-        let file = tmp.path().join(".gitignore");
+        let root = dunce::canonicalize(tmp.path()).unwrap();
+        let file = root.join(".gitignore");
         fs::write(&file, "before\n").unwrap();
         let before = snapshot(&file).unwrap();
-        let mut temp = tempfile::NamedTempFile::new_in(tmp.path()).unwrap();
+        let mut temp = tempfile::NamedTempFile::new_in(&root).unwrap();
         temp.write_all(b"before\n/new\n").unwrap();
         fs::write(&file, "external writer\n").unwrap();
         assert!(replace_if_unchanged(&file, before, temp).unwrap_err().message.contains("changed"));

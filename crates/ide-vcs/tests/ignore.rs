@@ -283,7 +283,27 @@ fn non_utf8_paths_are_rejected_without_creating_ignore_files() {
     use std::os::unix::ffi::OsStringExt;
     let fx = Fixture::new();
     let path = fx.root.join(std::ffi::OsString::from_vec(b"invalid\xff".to_vec()));
-    std::fs::write(&path, "x").unwrap();
+    // APFS rejects creation of this filename; the request must fail clearly before I/O.
     assert!(add_to_ignore(&[path], Gitignore).unwrap_err().message.contains("UTF-8"));
     assert!(!fx.root.join(".gitignore").exists());
+}
+
+#[test]
+fn later_negations_allow_reignoring_shared_and_local_paths_without_batch_duplicates() {
+    for destination in [Gitignore, LocalExclude] {
+        let fx = Fixture::new();
+        let path = fx.file("private");
+        let file = match destination {
+            Gitignore => fx.root.join(".gitignore"),
+            LocalExclude => fx.root.join(".git/info/exclude"),
+        };
+        std::fs::write(&file, "/private\n!/private\n").unwrap();
+        assert!(git(&fx.root, &["status", "--porcelain", "--untracked-files=all"]).contains("private"));
+        add_to_ignore(&[path.clone(), path.clone()], destination).unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "/private\n!/private\n/private\n");
+        fx.ignored("private");
+        let once = std::fs::read(&file).unwrap();
+        add_to_ignore(&[path], destination).unwrap();
+        assert_eq!(std::fs::read(file).unwrap(), once);
+    }
 }
