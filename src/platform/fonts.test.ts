@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monoFontFamily } from "./fonts";
+import { monoFontFamily, quoteFontFamily, uiFontFamily } from "./fonts";
 
 const BASE = "var(--font-mono)";
 
@@ -21,4 +21,11 @@ describe("monoFontFamily", () => {
       '"Not Installed", "JetBrains Mono Variable", monospace',
     );
   });
+});
+
+it("escapes CSS special characters without turning a family into a list", () => {
+  expect(quoteFontFamily('A"B\\C,D')).toBe('"A\\22 B\\5c C,D"');
+  expect(quoteFontFamily("A\nB")).toBe('"A\\a B"');
+  expect(uiFontFamily("JetBrains Mono")).toContain('"JetBrains Mono Variable"');
+  expect(uiFontFamily("Inter")).toContain('"Inter Variable"');
 });

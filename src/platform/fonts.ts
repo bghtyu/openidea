@@ -10,7 +10,13 @@ export const BUNDLED_MONO_FAMILY = "JetBrains Mono";
 const BUNDLED_MONO_FACES = ['"JetBrains Mono Variable"', '"JetBrains Mono"'];
 const MONO_STACK_FALLBACK = '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace';
 
-const quote = (f: string) => `"${f.replace(/"/g, "").trim()}"`;
+/** Quote one CSS family safely (including quotes, backslashes and control characters). */
+export const quoteFontFamily = (family: string) =>
+  // oxlint-disable-next-line no-control-regex -- CSS string escaping must cover controls
+  `"${family.trim().replace(/["\\\x00-\x1f\x7f]/g, (char) => `\\${char.codePointAt(0)!.toString(16)} `)}"`;
+
+// Preserve compatibility with previously saved names wrapped in CSS quotes.
+const familyName = (family: string) => family.trim().replace(/^"(.*)"$/, "$1");
 
 /** The `--font-mono` stack, resolved (canvas / xterm can't use `var()`). */
 export function monoStack(): string {
@@ -24,10 +30,10 @@ export function monoStack(): string {
  * bundled face, so it renders without a system install.
  */
 export function monoFontFamily(family: string | undefined, fallback = "", base = monoStack()): string {
-  const name = (family ?? "").replace(/"/g, "").trim();
-  const fb = fallback.replace(/"/g, "").trim();
-  const head = !name || name === BUNDLED_MONO_FAMILY ? BUNDLED_MONO_FACES : [quote(name)];
-  return [...head, ...(fb ? [quote(fb)] : []), base].join(", ");
+  const name = familyName(family ?? "");
+  const fb = familyName(fallback);
+  const head = !name || name === BUNDLED_MONO_FAMILY ? BUNDLED_MONO_FACES : [quoteFontFamily(name)];
+  return [...head, ...(fb ? [quoteFontFamily(fb)] : []), base].join(", ");
 }
 
 /**
@@ -42,4 +48,16 @@ export async function fontsLoaded(family: string, size: number): Promise<void> {
   } catch {
     /* an unparsable list measures with whatever is available */
   }
+}
+
+/** Bundled aliases also apply when selected for the interface. */
+export function uiFontFamily(family: string): string {
+  const name = familyName(family);
+  const head =
+    name === BUNDLED_MONO_FAMILY
+      ? BUNDLED_MONO_FACES.join(", ")
+      : name === "Inter"
+        ? '"Inter Variable", "Inter"'
+        : quoteFontFamily(name);
+  return `${head}, system-ui, sans-serif`;
 }
