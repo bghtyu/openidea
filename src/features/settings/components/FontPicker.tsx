@@ -40,13 +40,9 @@ export function FontPicker({
       ? "Loading system fonts…"
       : status === "empty"
         ? "No system fonts were returned. Bundled fonts and manual input are available."
-        : status === "error"
-          ? "Could not load system fonts. You can still enter a name or refresh."
-          : status === "browser"
-            ? "System font discovery is available in the desktop app. You can enter a name."
-            : value && !known && status === "ready"
-              ? "This name was not found on this desktop. The saved preference is kept."
-              : "Type a family name or search installed fonts.";
+        : value && !known && status === "ready"
+          ? "This name was not found on this desktop. The saved preference is kept."
+          : "Type a family name or search installed fonts.";
   const choose = (name: string) => {
     onChange(name);
     setDraft(null);

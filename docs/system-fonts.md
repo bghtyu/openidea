@@ -15,8 +15,14 @@ result in the desktop process. Windows explicitly checks DirectWrite for updates
 before constructing font-kit's cached collection. Refresh creates a new native source and replaces
 the cache only after success. A shared frontend store coalesces requests within
 each window. Each settings window can explicitly refresh its suggestions.
-Browser development offers bundled fonts and manual entry without attempting
-native APIs or pretending to enumerate the operating system.
+If native discovery fails before any successful catalog exists, the former 31
+candidates are probed with Canvas width comparisons. Browser development uses
+the same bounded fallback without invoking native APIs. These suggestions appear
+quietly with manual input and Refresh; they are not a complete installed-font
+catalog. If Canvas is unavailable or throws, bundled fonts remain usable.
+A successful native result (including an empty result) is authoritative: failed
+refreshes retain it and never substitute candidate suggestions. A successful
+retry replaces fallback suggestions. Neither failure nor refresh edits preferences.
 
 Families are native family names, not full/PostScript face names: weights,
 italics and variable instances do not become separate choices. Case-insensitive

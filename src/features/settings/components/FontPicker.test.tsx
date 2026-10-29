@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { FontPicker } from "./FontPicker";
 import { bundledFonts, useSystemFontStore } from "@/platform/systemFonts";
@@ -7,6 +7,7 @@ import { bundledFonts, useSystemFontStore } from "@/platform/systemFonts";
 beforeEach(() =>
   useSystemFontStore.setState({
     status: "ready",
+    source: "native",
     fonts: [...bundledFonts, { name: "Maple Mono NF", monospace: true }, { name: "思源宋体", monospace: false }],
   }),
 );
@@ -52,12 +53,35 @@ it("reflects external scope/saved-value changes and disables inherited selection
 });
 it.each([
   ["loading", "Loading system fonts"],
-  ["error", "Could not load"],
+  ["error", "Type a family name"],
   ["empty", "No system fonts"],
-  ["browser", "desktop app"],
+  ["browser", "Type a family name"],
 ] as const)("explains %s without declaring saved fonts missing", (status, message) => {
   useSystemFontStore.setState({ status });
   render(<Harness />);
   expect(screen.getByRole("status")).toHaveTextContent(message);
   expect(screen.getByRole("combobox")).toHaveValue("Saved Missing Font");
+});
+
+it("quietly keeps selections and manual input through fallback and native retry", () => {
+  useSystemFontStore.setState({ status: "error", source: "limited", fonts: bundledFonts });
+  render(<Harness />);
+  const input = screen.getByRole("combobox");
+  expect(input).toHaveValue("Saved Missing Font");
+  expect(screen.getByRole("status")).toHaveTextContent("Type a family name");
+  expect(screen.getByRole("button", { name: "Refresh system fonts" })).toBeEnabled();
+  fireEvent.change(input, { target: { value: "Manual CJK Family" } });
+  fireEvent.keyDown(input, { key: "Enter" });
+  act(() => useSystemFontStore.setState({ status: "loading" }));
+  expect(input).toHaveValue("Manual CJK Family");
+  act(() =>
+    useSystemFontStore.setState({
+      status: "ready",
+      source: "native",
+      fonts: [...bundledFonts, { name: "New Native Family", monospace: false }],
+    }),
+  );
+  expect(input).toHaveValue("Manual CJK Family");
+  fireEvent.focus(input);
+  expect(screen.getByRole("option", { name: /New Native Family/ })).toBeInTheDocument();
 });

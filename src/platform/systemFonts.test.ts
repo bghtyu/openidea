@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const { native, discover } = vi.hoisted(() => ({ native: vi.fn(() => true), discover: vi.fn() }));
+const { native, discover, detect } = vi.hoisted(() => ({
+  native: vi.fn(() => true),
+  discover: vi.fn(),
+  detect: vi.fn(),
+}));
+vi.mock("./candidateFonts", () => ({ detectCandidateFonts: detect }));
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: native }));
 vi.mock("@/bindings", () => ({ commands: { systemFonts: discover } }));
 import { bundledFonts, loadSystemFonts, useSystemFontStore } from "./systemFonts";
@@ -7,7 +12,8 @@ import { bundledFonts, loadSystemFonts, useSystemFontStore } from "./systemFonts
 beforeEach(() => {
   native.mockReturnValue(true);
   discover.mockReset();
-  useSystemFontStore.setState({ fonts: bundledFonts, status: "idle" });
+  detect.mockReset().mockReturnValue([{ name: "Menlo", monospace: true }]);
+  useSystemFontStore.setState({ fonts: bundledFonts, status: "idle", source: "bundled" });
 });
 describe("local font discovery", () => {
   it("shares an in-flight request, caches families outside the old list and explicitly refreshes", async () => {
@@ -20,6 +26,7 @@ describe("local font discovery", () => {
     const first = loadSystemFonts();
     expect(useSystemFontStore.getState().status).toBe("loading");
     expect(loadSystemFonts()).toBe(first);
+    await Promise.resolve();
     resolve({
       status: "ok",
       data: [
@@ -38,21 +45,48 @@ describe("local font discovery", () => {
     discover.mockResolvedValue({ status: "ok", data: [] });
     await loadSystemFonts(true);
     expect(discover).toHaveBeenLastCalledWith(true);
+    expect(useSystemFontStore.getState()).toMatchObject({ status: "empty", source: "native" });
+    expect(detect).not.toHaveBeenCalled();
     expect(useSystemFontStore.getState().fonts).toEqual([bundledFonts[1], bundledFonts[0]]);
   });
   it("reports errors without losing suggestions, then retries", async () => {
     discover.mockResolvedValueOnce({ status: "error", error: { kind: "unavailable", message: "Unavailable" } });
     await loadSystemFonts();
-    expect(useSystemFontStore.getState()).toMatchObject({ status: "error", fonts: bundledFonts });
+    expect(useSystemFontStore.getState()).toMatchObject({ status: "error", source: "limited" });
+    expect(useSystemFontStore.getState().fonts.some((f) => f.name === "Menlo")).toBe(true);
     discover.mockResolvedValue({ status: "ok", data: [{ name: "思源宋体", monospace: false }] });
     await loadSystemFonts(true);
-    expect(useSystemFontStore.getState().status).toBe("ready");
+    expect(useSystemFontStore.getState()).toMatchObject({ status: "ready", source: "native" });
+    expect(useSystemFontStore.getState().fonts.some((f) => f.name === "Menlo")).toBe(false);
     expect(useSystemFontStore.getState().fonts.some((f) => f.name === "思源宋体")).toBe(true);
   });
   it("does not invoke desktop APIs in browser development", async () => {
     native.mockReturnValue(false);
     await loadSystemFonts();
     expect(discover).not.toHaveBeenCalled();
+    expect(detect).toHaveBeenCalledOnce();
     expect(useSystemFontStore.getState().status).toBe("browser");
   });
+});
+
+it.each([{ fonts: [] }, { fonts: [{ name: "Outside Legacy List", monospace: true }] }])(
+  "retains successful native catalogs, including empty ones, after refresh failure: %j",
+  async ({ fonts }) => {
+    discover.mockResolvedValueOnce({ status: "ok", data: fonts });
+    await loadSystemFonts();
+    const previous = useSystemFontStore.getState().fonts;
+    discover.mockRejectedValueOnce(new Error("native unavailable"));
+    await loadSystemFonts(true);
+    expect(useSystemFontStore.getState()).toMatchObject({ status: "error", source: "native", fonts: previous });
+    expect(detect).not.toHaveBeenCalled();
+  },
+);
+it("keeps bundled/manual recovery usable when candidate probing also fails", async () => {
+  discover.mockRejectedValue(new Error("native unavailable"));
+  detect.mockImplementation(() => {
+    throw new Error("canvas unavailable");
+  });
+  await loadSystemFonts();
+  expect(useSystemFontStore.getState()).toMatchObject({ status: "error", source: "limited" });
+  expect(useSystemFontStore.getState().fonts.map((font) => font.name)).toEqual(["Inter", "JetBrains Mono"]);
 });

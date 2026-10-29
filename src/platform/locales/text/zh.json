@@ -4727,8 +4727,6 @@
   "Proxy port must be between 1 and 65535": "代理端口必须介于 1 和 65535 之间",
   "Proxy login is empty": "代理登录名为空",
   "Loading system fonts…": "正在加载系统字体…",
-  "Could not load system fonts. You can still enter a name or refresh.": "无法加载系统字体。仍可输入字体名称或刷新。",
-  "System font discovery is available in the desktop app. You can enter a name.": "桌面应用支持发现系统字体。此处可手动输入名称。",
   "No system fonts were returned. Bundled fonts and manual input are available.": "未发现系统字体。可选择内置字体或手动输入。",
   "This name was not found on this desktop. The saved preference is kept.": "此桌面未发现该字体，已保留保存的设置。",
   "Type a family name or search installed fonts.": "输入字体家族名称或搜索已安装字体。",
