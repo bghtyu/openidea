@@ -2842,6 +2842,7 @@
   "Test classpath of the module": "模块的测试类路径",
   "Run a Java main class": "运行 Java 主类",
   "Run a Spring Boot application": "运行 Spring Boot 应用程序",
+  "Spring Boot": "Spring Boot 应用",
   "Passed to the JVM that spring-boot:run or the tests start, not to Maven": "传给 spring-boot:run 或测试启动的 JVM，而不是 Maven 本身",
   "Passed to the JVMs the tasks start (bootRun, run, test), not to Gradle": "传给任务启动的 JVM（bootRun、run、test），而不是 Gradle 本身",
   "Run a package.json script": "运行 package.json 脚本",
