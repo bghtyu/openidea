@@ -40,6 +40,8 @@ import {
 import { refreshNow, repoName } from "./store";
 import { tx } from "@/platform/i18n";
 
+import { addToIgnore } from "./ignore";
+
 const VCS = "vcsAvailable";
 const IN_COMMIT_WINDOW = "vcsAvailable && activeToolWindow == commit";
 
@@ -453,6 +455,14 @@ export function registerVcsActions(): () => void {
         void revealCommit(arg);
       },
     },
+    ...(["gitignore", "localExclude"] as const).map((destination): Action => ({
+      id: destination === "gitignore" ? "vcs.ignoreShared" : "vcs.ignoreLocal",
+      title: destination === "gitignore" ? "Add to .gitignore" : "Add to .git/info/exclude",
+      category: "Git",
+      when: VCS,
+      keywords: ["ignore", "unversioned", "exclude"],
+      run: ({ arg }) => addToIgnore(contextPaths(arg), destination),
+    })),
     {
       id: "vcs.addToVcs",
       title: "Add to VCS",

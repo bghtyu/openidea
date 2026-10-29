@@ -4516,6 +4516,7 @@ dependencies = [
  "chardetng",
  "dunce",
  "encoding_rs",
+ "gix",
  "globset",
  "ide-core",
  "ignore",
